@@ -4,11 +4,11 @@
 #include "Adafruit_SHT31.h"
 #include "devicestate.h"
 #include <OneWire.h>
+#include "SensorPayload.h"
 #include <DallasTemperature.h>
 
 OneWire           deviceTemp(TEMP_SENSOR_PIN);
 DallasTemperature tempSensor(&deviceTemp);
-
 Adafruit_SHT31    sht31(&Wire);
 
 bool testBit(uint &bits, int bit)
@@ -62,7 +62,7 @@ bool readDSB112()
     return false;
   }
   clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
-  RSTATE.roomTemp = temp; 
+  PAYLOAD_T.temp = temp;
   return true;
 }
 
@@ -86,9 +86,9 @@ bool readSHT()
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  RSTATE.roomTempTH = temp ;
-  RSTATE.roomHumid = humid ;
-
+  PAYLOAD_TH.temp = temp;
+  PAYLOAD_TH.humidity = humid;
+  
   return true;
 }
 

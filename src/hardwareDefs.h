@@ -20,21 +20,33 @@ const char* deviceTypeEnumToString(uint8_t devType){
   return map[devType];
 }
 
-const char ssidAPConfig[] = "ThingHz";
+#define AP_MODE_SSID "ThingHz-"
+
+String formApSsidName(String deviceId){
+    return String(AP_MODE_SSID + deviceId);
+}
 
 #define SPIFF_OTA_PATH "/"
 
 #define DEBUG_SERIAL 1 // should come from build system
 //#define USE_RTOS 1
-#define DUMMY_SHT     1
-#define DUMMY_DALLAS  1
-#define DUMMY_DISPLAY 1
+
+/**
+ * @todo: We need to do this part later
+*/
+#define ESP_NOW      1
+
+//batery max and min voltages
+#define BATT_VOL_0                 3.0
+#define BATT_VOL_100               4.2
+
 
 #define UDP_PACKET_BROADCAST 1
 
 // hardware identifier and rev
-#define DEVICE_TYPE     ThingHz_Standalone                    
+#define DEVICE_TYPE         ThingHz_Standalone                    
 
+#define DEVICE_SENSOR_TYPE  SensorTemp
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
 #define HW_REV                          1 // poc using esp 12e/esp32, no lte modem
 
@@ -45,9 +57,12 @@ const char ssidAPConfig[] = "ThingHz";
 // wiring configuration
 #define TEMP_SENSOR_PIN     32
 #define BATTERY_VOL_PIN     36
+#define SIG_PIN             26
+#define CONFIG_PIN          25
 
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
+#define SECS_MULTIPLIER_DEEPSLEEP               1200
 
 
 #define EEPROM_STORE_SIZE                       512
@@ -56,14 +71,21 @@ const char ssidAPConfig[] = "ThingHz";
 
 #define WAN_WIFI_SSID_DEFAULT                    "ThingHz_net"
 #define WAN_WIFI_PASS_DEFAULT                    "ThingHz123"
+#define DEVICE_ID_DEFAULT                        "THINGHZSN0001" 
 
 #define NODE_CAPTIVE_PORTAL_MAX_CONFIG_TIME_SECS  120
 
+#define BATTERY_INITIAL_READING    0
 #define INVALID_TEMP_READING      99
 #define INVALID_HUMIDITY_READING  -1
+#define INVALID_GAS_READING       -1
+#define INVALID_LIGHT_READING     -1
+#define INVALID_MOISTURE_READING  -1
+#define INVALID_GYRO_READING      -1
+#define INVALID_ACCEL_READING     -1
 
 #define MINIMUM_DEBOUNCE_TIME         250
-
+#define MIN_TARGET_TEMP               4
 
 #ifdef DEBUG_SERIAL
 #define DEBUG_PRINTF(...)           Serial.printf(__VA_ARGS__)

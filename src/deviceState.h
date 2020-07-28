@@ -2,8 +2,8 @@
 #define DEVICESTATE_H
 
 #include <EEPROM.h>
-#include "hardwaredefs.h"
-#include "util.h"
+#include "hardwareDefs.h"
+#include "utils.h"
 
 
 /**
@@ -18,7 +18,10 @@ enum DeviceStateEvent {
   DSE_TMPFaulty               = 1 << 3,
   DSE_DSBFaulty               = 1 << 4,
   DSE_TEMPAlarm               = 1 << 5,
-  DSE_HUMIDAlarm              = 1 << 6   
+  DSE_HUMIDAlarm              = 1 << 6,
+  DSE_GASFaulty               = 1 << 7,
+  DSE_GYROFaulty              = 1 << 8,
+  DSE_LIGHTFaulty             = 1 << 9   
 };
 
 //advance declaration
@@ -31,25 +34,23 @@ class PersistantStateStorageFormat;
 */
 class RunTimeState {
   public:
-    RunTimeState() : 
-      roomTempTH(INVALID_TEMP_READING), 
-      roomTemp(INVALID_TEMP_READING),
-      roomHumid(INVALID_HUMIDITY_READING),
+    RunTimeState(): 
       deviceEvents(DeviceStateEvent::DSE_None),
       isWiFiConnected(false),
       isAPActive(false),
-      macAddr(DEVICE_ID),
+      isPortalActive(false),
+      macAddr(DEVICE_ID_DEFAULT),
+      batteryPercentage(BATT_VOL_100)
     {
+    
     }
 
-    float roomTempTH;
-    float roomTemp;  
-    float roomHumid;
     uint deviceEvents;
     bool isWiFiConnected;
     bool isAPActive;
+    bool isPortalActive;
     String macAddr;
-    
+    int batteryPercentage;    
 };
 
 /**
@@ -61,10 +62,13 @@ class PersistantState {
   public:
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT), 
                         apPass(WAN_WIFI_PASS_DEFAULT),
+                        deviceId(DEVICE_ID_DEFAULT),
                         targetTemp(MIN_TARGET_TEMP), 
                         targetHumidity(0.0f), 
                         isOtaAvailable(0), 
-                        newfWVersion(0),
+                        newfWVersion(0)
+                        {
+
                         }
 
     PersistantState(const PersistantStateStorageFormat& persistantStore);
@@ -81,6 +85,7 @@ class PersistantState {
     // public data members
     String apSSID;
     String apPass;
+    String deviceId;
     float targetTemp;
     float targetHumidity;
     uint8_t isOtaAvailable;
@@ -102,6 +107,7 @@ struct PersistantStateStorageFormat {
     char version[8];
     char apSSID[30];
     char apPass[30];
+    char deviceId[30];
     float setTemp;
     float setHumid;
     uint8_t isOtaAvailable;
@@ -112,6 +118,7 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
 {
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
+  deviceId = String();
   targetTemp = persistantStore.setTemp;
   targetHumidity = persistantStore.setHumid;
   isOtaAvailable = persistantStore.isOtaAvailable;

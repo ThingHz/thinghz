@@ -133,21 +133,20 @@ class ESPCaptivePortal
             DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
             PSTATE.apPass = request->getParam("pass")->value();
             DEBUG_PRINTF("Pass Stored %s\t\n",PSTATE.apPass.c_str());
-            snprintf(credResponsePayload,RESPONSE_LENGTH,"{\"apSSID\":%s,\"apPass\":%s}",PSTATE.apSSID,PSTATE.apPass);
+            snprintf(credResponsePayload,RESPONSE_LENGTH,"{\"apSSID\":%s,\"apPass\":%s}",(PSTATE.apSSID).c_str(),(PSTATE.apPass).c_str());
             request->send(200, "application/json", credResponsePayload);
-
         } else {
-            request->send_P(200,"text/html",_htmlWiFiSetPage().c_str());
+            request->send_P(200,"text/html",HTTP_FORM_WIFISET);
         }
       });
 
       server.on("/alarm",HTTP_GET,[](AsyncWebServerRequest *request){
-      if (request->params() > 0 && request->hasParam("temp") && request->hasParam("humid"){
+      if (request->params() > 0 && request->hasParam("temp") && request->hasParam("humid")){
           PSTATE.targetTemp = (request->getParam("temp")->value()).toFloat();
-          DEBUG_PRINTF("rtValue %.1f\t\n", PSTATE.rtCorrecfactor);
-          PSTATE.targetHumid = (request->getParam("humid")->value()).toFloat();
-          DEBUG_PRINTF("rhValue %.1f\t\n", PSTATE.rhCorrecfactor);
-          snprintf(correcResponsePayload,RESPONSE_LENGTH,"{\"temp\":%.1f,\"humid\":%.1f}",PSTATE.targetTemp,PSTATE.targetHumid);
+          DEBUG_PRINTF("targetTemp %.1f\t\n", PSTATE.targetTemp);
+          PSTATE.targetHumidity = (request->getParam("humid")->value()).toFloat();
+          DEBUG_PRINTF("targetHumid %.1f\t\n", PSTATE.targetHumidity);
+          snprintf(correcResponsePayload,RESPONSE_LENGTH,"{\"temp\":%.1f,\"humid\":%.1f}",PSTATE.targetTemp,PSTATE.targetHumidity);
          request->send(200, "application/json", correcResponsePayload);
       } else {
           request->send_P(200,"text/html",HTTP_FORM_SET_CORRECTION_FACTOR);

@@ -2,6 +2,45 @@
 #define UTILS_H
 
 #include "deviceState.h"
+#include "hardwareDefs.h"
+#include "SensorPayload.h"
+
+// return battery voltage in "V" units
+float readBatValue()
+{
+  //formula for VD1 = 0.1M/(1.2M+0.1M)
+  float batVol = analogRead(BATTERY_VOL_PIN) * 0.00318; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]  
+  DEBUG_PRINTF("Battery=%f \n", batVol);
+  DEBUG_PRINTF("analogValue %d", analogRead(A0));
+  return batVol;
+}  
+
+/**
+ * @brief:
+ * Helper function to get the Battery percentage.
+ * Battery voltage is mapped to 0 to 100 factor
+ * @param:
+ * Battery Voltage in float 
+ * @return:
+ * battery percentage in int   
+*/
+int getBatteryPercentage(const float battVoltage) {
+  int maxVal = BATT_VOL_100 * 100; // scale by 100
+  int minVal = BATT_VOL_0 * 100; // scale by 100
+  int percentage = 0;
+  if (battVoltage > maxVal) {
+    maxVal = battVoltage;
+  }
+  percentage = map(int(battVoltage * 100), minVal, maxVal, 0, 100);
+  if (percentage < 0) {
+    percentage = 0;
+  }  if (percentage > 100) {
+    percentage = 100;
+  }
+  return percentage;
+}
+
+
 /**
  * @brief:
  * Helper function to get the RSSI percentage from the RSSI in db of available Networks
@@ -10,6 +49,7 @@
  * @return:
  * rssi in percentage   
 */
+
 int getRSSIasQuality(int RSSI) {
       int quality = 0;
       if (RSSI <= -100) {
@@ -21,6 +61,17 @@ int getRSSIasQuality(int RSSI) {
       }
       return quality;
     }
+
+/**
+ * @brief:
+ * Helper function to get if there are multiple faliure.
+ * @todo:
+ * Do we need this we have another helper funtion for the same purpose
+ * @param:
+ * Device State enum 
+ * @return:
+ * true for multiple device event   
+*/
 
 bool isMultiDeviceEvent(int n) {
   if (n == 0) {
@@ -36,49 +87,14 @@ bool isMultiDeviceEvent(int n) {
   return true;
 }
 
-
-String DSEEnumToError(int enumValue)
-{
-  String criticalDevMessage = "";
-  switch (enumValue) {
-    case DeviceStateEvent::DSE_SHTDisconnected:
-      criticalDevMessage = "TH Sensor is not connected";
-      break;
-    case DeviceStateEvent::DSE_SHTFaulty:
-      criticalDevMessage = "TH Sensor is faulty";
-      break;
-    case DeviceStateEvent::DSE_TMPDisconnected:
-      criticalDevMessage = "Temperature Sensor is not connected";
-      break;
-    case DeviceStateEvent::DSE_TMPFaulty:
-      criticalDevMessage = "Temperature Sensor is Faulty";
-      break;
-    case DeviceStateEvent::DSE_DSBFaulty:
-      criticalDevMessage = "DSB112 Temperature Sensor is Faulty";    
-    default :
-      criticalDevMessage = "";
-      break;
-  }
-  return criticalDevMessage;
-}
-
-String cirticialMsg()
-{
-  if (RSTATE.deviceEvents == 0) {
-    return String("All Healthy");
-  }
-
-  String criticalDevMessage = "";
-
-  int flagMask = DSE_SHTDisconnected; // first error flag
-  while (RSTATE.deviceEvents & flagMask) {
-    criticalDevMessage += DSEEnumToError(RSTATE.deviceEvents & flagMask);
-    criticalDevMessage += "\n";
-    flagMask = flagMask << 1;
-  }
-
-  return criticalDevMessage;
-}
+/**
+ * @brief:
+ * Checks for the deviceStateEvent set bits. 
+ * @param:
+ * deviceEvent      bit position  
+ * @return:
+ * true if bit is set   
+*/
 
 bool checkSetBit(int state, int setBit){
   bool isBitSet = state & (1<<setBit);
@@ -88,12 +104,19 @@ bool checkSetBit(int state, int setBit){
     return true;
 }
 
-float reportedRoomTemp()
+/**
+ * @brief:
+ * Prepares a remote file name for ota   
+ * @return:
+ * String    
+*/
+
+String prepareRemoteFWFileName(uint8_t devType, uint8_t hwRev, uint8_t newFwRev)
 {
-  if (checkSetBit(RSTATE.deviceEvents,0) || checkSetBit(RSTATE.deviceEvents,1)) {
-  return RSTATE.roomTemp;
-  }
-  return RSTATE.roomTempTH;
+  char retString[20] = { 0 };
+  snprintf(retString, sizeof(retString), "%d-%d-%d.bin", devType, hwRev, newFwRev);
+  return String(retString);
 }
+
 
 #endif
