@@ -1,5 +1,5 @@
 # ThingHz
-V2
+
 
 ### Libraries used:
 
