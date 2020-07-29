@@ -62,7 +62,7 @@ bool readDSB112()
     return false;
   }
   clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
-  PAYLOAD_T.temp = temp;
+  RSTATE.temperature = temp;
   return true;
 }
 
@@ -86,8 +86,8 @@ bool readSHT()
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  PAYLOAD_TH.temp = temp;
-  PAYLOAD_TH.humidity = humid;
+  RSTATE.temperature = temp;
+  RSTATE.humidity = humid;
   
   return true;
 }

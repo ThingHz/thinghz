@@ -27,36 +27,28 @@ DEBUG_PRINTLN("Started ThingHz Wireless Temperature Sensor");
 if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
-
-if (!SPIFFS.begin(true)) {
-    DEBUG_PRINTLN("An Error has occurred while mounting SPIFFS, fw upgrades will not work");
-  } else {
-    DEBUG_PRINTLN("sucessfully mouted spiffs");
-  }
   pinMode(SIG_PIN,              OUTPUT);
   pinMode(TEMP_SENSOR_PIN,      INPUT);
   pinMode(CONFIG_PIN,           INPUT);
-  /*if (PSTATE.isOtaAvailable == 1) {
-    PSTATE.isOtaAvailable = 0;
-    deviceState.store();
-    captivePortal.endPortal();
-    bool rc = performOTA();
-    if (!rc) {
-      PSTATE.isOtaAvailable = 1;
-      deviceState.store();
-    }
-  }*/
+  pinMode(VOLTAGE_DIV_PIN,      OUTPUT);
+  digitalWrite(VOLTAGE_DIV_PIN,LOW);
   shtInit();
   DSB112Init();
+  
+  if (!readDSB112()) {
+      DEBUG_PRINTLN("Error Reading DSB112");
+  }
+  
   if (!isSHTAvailable()) {
     DEBUG_PRINTLN("SHT Not connected");
   }
+  
   attachInterrupt(digitalPinToInterrupt(CONFIG_PIN), ISR_Config_Button,   FALLING);  //pin Change High to Low
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
   if (RSTATE.isPortalActive == true) {
       captivePortal.servePortal(true);
       captivePortal.beginServer();
-      if(!APConnection(WAN_WIFI_SSID_DEFAULT)){
+      if(!APConnection(AP_MODE_SSID)){
         DEBUG_PRINTLN("Error Setting Up AP Connection");
         return;
       }
@@ -70,7 +62,7 @@ if (!SPIFFS.begin(true)) {
 
 void loop() {
   if (RSTATE.isPortalActive == true) {
-       if(!APConnection(WAN_WIFI_SSID_DEFAULT)){
+       if(!APConnection(AP_MODE_SSID)){
         DEBUG_PRINTLN("Error Setting Up AP Connection");
         return;
       } 
@@ -78,19 +70,21 @@ void loop() {
       captivePortal.beginServer();
       RSTATE.isPortalActive = false;
   }
-  if (!(WiFi.softAPgetStationNum() > 0)&&millis()>300*MILLI_SECS_MULTIPLIER) {
+  if (!(WiFi.softAPgetStationNum() > 0)) {
       if (!reconnectWiFi((PSTATE.apSSID).c_str(),(PSTATE.apPass).c_str(),300)) {
           DEBUG_PRINTLN("Error connecting to WiFi");
     }
       if (!cloudTalk.sendPayload()) {
           DEBUG_PRINTLN("Error Sending Payload");
       }
-
+      digitalWrite(SIG_PIN,HIGH);
+      delay(500);
+      digitalWrite(SIG_PIN,LOW);
+      DEBUG_PRINTLN("Going to sleep");
       esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP*MICRO_SECS_MULITPLIER);
-      esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);   
+      //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);   
       esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
       esp_deep_sleep_start();
   }
 }
   
-

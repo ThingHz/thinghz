@@ -40,7 +40,9 @@ class RunTimeState {
       isAPActive(false),
       isPortalActive(false),
       macAddr(DEVICE_ID_DEFAULT),
-      batteryPercentage(BATT_VOL_100)
+      batteryPercentage(BATT_VOL_100),
+      temperature(INVALID_TEMP_READING),
+      humidity(INVALID_HUMIDITY_READING)
     {
     
     }
@@ -50,7 +52,9 @@ class RunTimeState {
     bool isAPActive;
     bool isPortalActive;
     String macAddr;
-    int batteryPercentage;    
+    int batteryPercentage;
+    float temperature;
+    float humidity;    
 };
 
 /**

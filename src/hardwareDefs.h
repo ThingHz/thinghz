@@ -59,18 +59,19 @@ String formApSsidName(String deviceId){
 #define BATTERY_VOL_PIN     36
 #define SIG_PIN             26
 #define CONFIG_PIN          25
+#define VOLTAGE_DIV_PIN     5
 
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
-#define SECS_MULTIPLIER_DEEPSLEEP               1200
+#define SECS_MULTIPLIER_DEEPSLEEP               300
 
 
 #define EEPROM_STORE_SIZE                       512
 #define EEPROM_STORAGE_FORMAT_VERSION           "c1"
 #define EEPROM_STARTING_ADDRESS                 0
 
-#define WAN_WIFI_SSID_DEFAULT                    "ThingHz_net"
-#define WAN_WIFI_PASS_DEFAULT                    "ThingHz123"
+#define WAN_WIFI_SSID_DEFAULT                    "Agnextsn_compass"
+#define WAN_WIFI_PASS_DEFAULT                    "Agnext0419"
 #define DEVICE_ID_DEFAULT                        "THINGHZSN0001" 
 
 #define NODE_CAPTIVE_PORTAL_MAX_CONFIG_TIME_SECS  120

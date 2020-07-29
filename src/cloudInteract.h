@@ -47,8 +47,7 @@ class CloudTalk{
       HTTPClient http;
       http.begin(urlmessageSend);//zx     //test
       http.addHeader("Content-Type" , "application/json");  //Specify content-type header
-      char messagePayload[JSON_MSG_MAX_LEN];
-      memcpy(messagePayload,createPayload(DEVICE_SENSOR_TYPE),JSON_MSG_MAX_LEN);
+      String messagePayload = createPayload(DEVICE_SENSOR_TYPE);
       DEBUG_PRINTLN(messagePayload);
       httpCode = http.POST(messagePayload);     //Send the request
       yield();
@@ -89,19 +88,22 @@ class CloudTalk{
      * @return: message payload array   
     */
     
-    char* createPayload(uint8_t sProfile){
+    String createPayload(uint8_t sProfile){
         char messageCreatePayload[JSON_MSG_MAX_LEN];
         switch(sProfile){
           case SensorProfile::SensorNone :
             DEBUG_PRINTLN("NO Sensor Found");
             break;
           case SensorProfile::SensorTemp :
+            PAYLOAD_T.temp = RSTATE.temperature;
             DEBUG_PRINTLN("Creating payload for Temp Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                     (RSTATE.macAddr).c_str(),
+            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
                       PAYLOAD_T.temp,
-                      getBatteryPercentage(readBatValue()),
-                      PAYLOAD_T.sensorProfile);
+                      RSTATE.humidity,
+                      PAYLOAD_TH.sensorProfile,
+                      RSTATE.batteryPercentage
+                      );
+            DEBUG_PRINTLN(messageCreatePayload);          
             break;
           case SensorProfile::SensorTH :
             DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
@@ -109,7 +111,7 @@ class CloudTalk{
                      (RSTATE.macAddr).c_str(),
                       PAYLOAD_TH.temp,
                       PAYLOAD_TH.humidity,
-                      PAYLOAD_TH.batteryPercentage,
+                      RSTATE.batteryPercentage,
                       PAYLOAD_TH.sensorProfile);
             break;    
           case SensorProfile::SensorTHM :
@@ -119,7 +121,7 @@ class CloudTalk{
                       PAYLOAD_THM.temp,
                       PAYLOAD_THM.humidity,
                       PAYLOAD_THM.moisture,
-                      PAYLOAD_TH.batteryPercentage,
+                      RSTATE.batteryPercentage,
                       PAYLOAD_TH.sensorProfile);
            
             break;
@@ -128,7 +130,7 @@ class CloudTalk{
             snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"gas\":\"%u\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
                      (RSTATE.macAddr).c_str(),
                       PAYLOAD_GAS.gas,
-                      PAYLOAD_GAS.batteryPercentage,
+                      RSTATE.batteryPercentage,
                       PAYLOAD_GAS.sensorProfile);
             break;
           case SensorProfile::SensorGyroAccel :
@@ -137,14 +139,14 @@ class CloudTalk{
                      (RSTATE.macAddr).c_str(),
                       PAYLOAD_GA.gyro,
                       PAYLOAD_GA.accel,
-                      PAYLOAD_TH.batteryPercentage,
+                      RSTATE.batteryPercentage,
                       PAYLOAD_TH.sensorProfile);
             break;
           default:
             DEBUG_PRINTLN("Not a valid Sensor");
             break;    
         }
-        return messageCreatePayload;
+        return String(messageCreatePayload);
     }
 
 
