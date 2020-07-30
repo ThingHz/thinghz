@@ -141,12 +141,20 @@ class ESPCaptivePortal
       });
 
       server.on("/alarm",HTTP_GET,[](AsyncWebServerRequest *request){
-      if (request->params() > 0 && request->hasParam("temp") && request->hasParam("humid")){
-          PSTATE.targetTemp = (request->getParam("temp")->value()).toFloat();
-          DEBUG_PRINTF("targetTemp %.1f\t\n", PSTATE.targetTemp);
-          PSTATE.targetHumidity = (request->getParam("humid")->value()).toFloat();
-          DEBUG_PRINTF("targetHumid %.1f\t\n", PSTATE.targetHumidity);
-          snprintf(correcResponsePayload,RESPONSE_LENGTH,"{\"temp\":%.1f,\"humid\":%.1f}",PSTATE.targetTemp,PSTATE.targetHumidity);
+      if (request->params() > 0 && request->hasParam("tMin") && request->hasParam("tMax") && request->hasParam("hMin") && request->hasParam("hMax")){
+          rtcState.targetTempMin = (request->getParam("tMin")->value()).toInt();
+          DEBUG_PRINTF("targetTempMin %d\t\n", rtcState.targetTempMin);
+          rtcState.targetTempMax = (request->getParam("tMax")->value()).toInt();
+          DEBUG_PRINTF("targetTempMax %d\t\n", rtcState.targetTempMax);
+          rtcState.targetHumidityMin = (request->getParam("hMin")->value()).toInt();
+          DEBUG_PRINTF("targetHumidMin %d\t\n", rtcState.targetHumidityMin);
+          rtcState.targetHumidityMax = (request->getParam("hMax")->value()).toInt();
+          DEBUG_PRINTF("targetHumidMax %d\t\n", rtcState.targetHumidityMax);
+          snprintf(correcResponsePayload,RESPONSE_LENGTH,"{\"targetTempMin\":%d,\"targetTempMax\":%d,\"targetHumidMin\":%d,\"targetHumidMax\":%d,}",
+                  rtcState.targetTempMin,
+                  rtcState.targetTempMax,
+                  rtcState.targetHumidityMin,
+                  rtcState.targetHumidityMax);
          request->send(200, "application/json", correcResponsePayload);
       } else {
           request->send_P(200,"text/html",HTTP_FORM_SET_CORRECTION_FACTOR);

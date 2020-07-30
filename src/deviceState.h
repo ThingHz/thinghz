@@ -67,8 +67,6 @@ class PersistantState {
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT), 
                         apPass(WAN_WIFI_PASS_DEFAULT),
                         deviceId(DEVICE_ID_DEFAULT),
-                        targetTemp(MIN_TARGET_TEMP), 
-                        targetHumidity(0.0f), 
                         isOtaAvailable(0), 
                         newfWVersion(0)
                         {
@@ -147,22 +145,29 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
  * We need to switch from EEPROM to RTC
 */
 
-struct RTCState {
+struct RTCState{
   public:
-    RTCState() : resetCounter(0), wifiConnFailureCounter(0) {
-
+    RTCState() : targetTempMin(MIN_TARGET_TEMP), targetHumidityMin(MIN_TARGET_HUMID), 
+                 targetTempMax(MAX_TARGET_TEMP),targetHumidityMax(MAX_TARGET_HUMID),
+                 wakeUpCount(MIN_WAKEUP_COUNT){
     }
-    uint8_t  resetCounter;                              // do we need to use it for http timouts when lte is not working. both these varialbes need a modem reset beyond a certain point.
-    uint8_t  wifiConnFailureCounter;                    // Counter for number of cycles that ended without connection.
-} __attribute__ ((packed));
+    int targetTempMin;
+    int targetHumidityMin;                               
+    int targetTempMax; 
+    int targetHumidityMax;                     
+    int wakeUpCount;
+}__attribute__ ((packed));
 
+typedef struct RTCState RTCState;
+RTC_DATA_ATTR RTCState rtcState;
+ 
 class DeviceState
 {
   public:
     // public data members
     RunTimeState        runTimeState;
     PersistantState     persistantState;
-    RTCState            rtcState;
+    
 
     DeviceState() {
     /**
@@ -241,6 +246,5 @@ extern DeviceState& deviceState;
 // just shortening macros
 #define RSTATE   deviceState.runTimeState
 #define PSTATE   deviceState.persistantState
-#define RTCSTATE deviceState.rtcState
 
 #endif // DEVICESTATE_H

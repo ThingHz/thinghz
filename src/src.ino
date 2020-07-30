@@ -35,14 +35,24 @@ if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
   shtInit();
   DSB112Init();
   
-  if (!readDSB112()) {
-      DEBUG_PRINTLN("Error Reading DSB112");
+  if (readDSB112()) {
+      if (RSTATE.temperature > rtcState.targetTempMax|| RSTATE.temperature < rtcState.targetTempMin) {
+          DEBUG_PRINTLN("Escalation occured - log the data");
+          return;
+      }else if (rtcState.wakeUpCount>=MAX_WAKEUP_COUNT) {
+          DEBUG_PRINTLN("has reacehed max offline count- now log the data");
+          rtcState.wakeUpCount = 0;
+          return;
+      }else {
+        rtcState.wakeUpCount++;
+        goToDeepSleep();
+      }
   }
   
   if (!isSHTAvailable()) {
     DEBUG_PRINTLN("SHT Not connected");
   }
-  
+
   attachInterrupt(digitalPinToInterrupt(CONFIG_PIN), ISR_Config_Button,   FALLING);  //pin Change High to Low
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
   if (RSTATE.isPortalActive == true) {
@@ -55,6 +65,7 @@ if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
       RSTATE.isPortalActive = false;
   }
   if(!reconnectWiFi((PSTATE.apSSID).c_str(),(PSTATE.apPass).c_str(),300)){
+      goToDeepSleep();
       DEBUG_PRINTLN("Error connecting to WiFi");
   }
 }
@@ -81,10 +92,15 @@ void loop() {
       delay(500);
       digitalWrite(SIG_PIN,LOW);
       DEBUG_PRINTLN("Going to sleep");
-      esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP*MICRO_SECS_MULITPLIER);
-      //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);   
-      esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-      esp_deep_sleep_start();
+      goToDeepSleep();
+     
   }
+}
+
+void goToDeepSleep(){
+    esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP*MICRO_SECS_MULITPLIER);
+      //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);   
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+    esp_deep_sleep_start();
 }
   

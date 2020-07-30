@@ -87,6 +87,12 @@ String formApSsidName(String deviceId){
 
 #define MINIMUM_DEBOUNCE_TIME         250
 #define MIN_TARGET_TEMP               4
+#define MAX_TARGET_TEMP               20
+#define MIN_TARGET_HUMID              20
+#define MAX_TARGET_HUMID              60
+#define MAX_WAKEUP_COUNT              3
+#define MIN_WAKEUP_COUNT              0
+
 
 #ifdef DEBUG_SERIAL
 #define DEBUG_PRINTF(...)           Serial.printf(__VA_ARGS__)
