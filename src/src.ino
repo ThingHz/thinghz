@@ -11,6 +11,8 @@ DeviceState& deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
 
+
+
 void IRAM_ATTR ISR_Config_Button() {
   static unsigned long buttonDebounce = 0;
   if (millis() - buttonDebounce > MINIMUM_DEBOUNCE_TIME) {
@@ -36,18 +38,17 @@ if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
   DSB112Init();
   
   if (readDSB112()) {
-      if (RSTATE.temperature > rtcState.targetTempMax|| RSTATE.temperature < rtcState.targetTempMin) {
-          DEBUG_PRINTLN("Escalation occured - log the data");
-          return;
+      if ((RSTATE.temperature < rtcState.targetTempMax|| RSTATE.temperature > rtcState.targetTempMin) && rtcState.wakeUpCount<MAX_WAKEUP_COUNT) {
+          DEBUG_PRINTLN("temperature is in range go to deepsleep");
+          Serial.println(rtcState.wakeUpCount);
+          rtcState.wakeUpCount++;
+          goToDeepSleep();
       }else if (rtcState.wakeUpCount>=MAX_WAKEUP_COUNT) {
+          Serial.println(rtcState.wakeUpCount);
           DEBUG_PRINTLN("has reacehed max offline count- now log the data");
           rtcState.wakeUpCount = 0;
-          return;
-      }else {
-        rtcState.wakeUpCount++;
-        goToDeepSleep();
-      }
-  }
+      }  
+    }
   
   if (!isSHTAvailable()) {
     DEBUG_PRINTLN("SHT Not connected");
