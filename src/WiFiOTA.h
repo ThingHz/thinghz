@@ -23,6 +23,9 @@ const IPAddress netMsk(255, 255, 255, 0);
 
 
 bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
+  if (RSTATE.isPortalActive){
+      return true;
+    }
   bool connectSuccess = true;
   int loopCounter = 0;
   if (WiFi.isConnected()) {

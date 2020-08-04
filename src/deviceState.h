@@ -39,6 +39,7 @@ class RunTimeState {
       isWiFiConnected(false),
       isAPActive(false),
       isPortalActive(false),
+      startPortal(0),
       macAddr(DEVICE_ID_DEFAULT),
       batteryPercentage(BATT_VOL_100),
       temperature(INVALID_TEMP_READING),
@@ -51,6 +52,7 @@ class RunTimeState {
     bool isWiFiConnected;
     bool isAPActive;
     bool isPortalActive;
+    unsigned long startPortal;
     String macAddr;
     int batteryPercentage;
     float temperature;

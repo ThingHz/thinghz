@@ -64,6 +64,7 @@ String formApSsidName(String deviceId){
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
 #define SECS_MULTIPLIER_DEEPSLEEP               100
+#define SECS_PORTAL_WAIT                        240
 
 
 #define EEPROM_STORE_SIZE                       512
@@ -74,7 +75,6 @@ String formApSsidName(String deviceId){
 #define WAN_WIFI_PASS_DEFAULT                    "Agnext0419"
 #define DEVICE_ID_DEFAULT                        "THINGHZSN0001" 
 
-#define NODE_CAPTIVE_PORTAL_MAX_CONFIG_TIME_SECS  120
 
 #define BATTERY_INITIAL_READING    0
 #define INVALID_TEMP_READING      99

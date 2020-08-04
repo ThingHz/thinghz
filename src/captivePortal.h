@@ -26,7 +26,7 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 <body><center>
 	<h1 style="color:#ffffff; font-family:Times New Roman,Times,Serif;padding-top: 10px;padding-bottom: 5px;font-size: 70px;font-style: oblique">ThingHz</h1>
 	<br><label style="color:#FFFFFF;font-family:Times New Roman,Times,Serif;font-size: 24px;padding-top: 5px;padding-bottom: 10px;">Configure Device Settings</label><br><br>
-	<FORM action="/" method= "get">
+	<FORM action="/cred" method= "get">
 		<P><label style="font-family:Times New Roman">WiFi SSID</label><br><input maxlength="30px" type = "text" name="ssid" id="ssid" placeholder= "SSID" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;>
 		<br><label style="font-family:Times New Roman">WiFi Password</label><br><input maxlength="30px" type = "text" name="pass" id="pass" placeholder= "Password" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;><br>
 		</P>
@@ -40,10 +40,11 @@ const char HTTP_FORM_SET_CORRECTION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE ht
   <style>body{ background-color: #0067B3  ; font-family: Arial, Helvetica, Sans-Serif }</style>
   </head><title>ThingHz</title><body><div class="container" align="center" ><center><br>
     <h1 style="color:#ffffff; font-family:Times New Roman,Times,Serif;padding-top: 10px;padding-bottom: 5px;font-size: 70px;font-style: oblique">ThingHz</h1>
-    <FORM action="/correc" method= "get">
+    <FORM action="/alarm" method= "get">
       <h3 style="color:#FFFFFF;font-family:Times New Roman,Times,Serif;padding-bottom: 20px;text-align: center;font-size: 20px">Alarm Condition</h3>
-          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Temperature</label><br>
-          <select name="temp" id="temp_id" style="border=2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
+          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Acceptable Temperature Range</label><br><br>
+          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
+		  <select name="tMax" id="tMax_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
             <option value="20">20&#8451 </option>
             <option value="19">19&#8451 </option>
             <option value="18">18&#8451 </option>
@@ -64,20 +65,67 @@ const char HTTP_FORM_SET_CORRECTION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE ht
             <option value="3">3&#8451 </option>
             <option value="2">2&#8451 </option>
             <option value="1">1&#8451 </option>
-          </select><br><br>
-          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Humidity</label><br> 
-          <select name="humid" id="humid_id" style="border=2px;  padding: 5px 100px; display: inline-block; margin-top:5px; border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
+          </select>&nbsp&nbsp&nbsp&nbsp 
+		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">min</label>&nbsp&nbsp&nbsp&nbsp
+		  <select name="tMin" id="tMin_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
+            <option value="20">20&#8451 </option>
+            <option value="19">19&#8451 </option>
+            <option value="18">18&#8451 </option>
+            <option value="17">17&#8451 </option>
+            <option value="16">16&#8451 </option>
+            <option value="15">15&#8451 </option>
+			      <option value="14">14&#8451 </option>
+            <option value="13">13&#8451 </option>
+            <option value="12">12&#8451 </option>
+            <option value="11">11&#8451 </option>
+			<option value="10">10&#8451 </option>
+            <option value="9">9&#8451 </option>
+            <option value="8">8&#8451 </option>
+            <option value="7">7&#8451 </option>
+            <option value="6">6&#8451 </option>
+            <option value="5">5&#8451 </option>
+            <option value="4">4&#8451 </option>
+            <option value="3">3&#8451 </option>
+            <option value="2">2&#8451 </option>
+            <option value="1">1&#8451 </option>
+          </select><br><br><br>
+          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Acceptable Humidity Range</label><br><br>
+		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
+          <select name="hMax" id="hMax_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px; border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
             <option value="20">20% </option>
             <option value="19">19% </option>
             <option value="18">18% </option>
             <option value="17">17% </option>
             <option value="16">16% </option>
             <option value="15">15% </option>
-			      <option value="14">14% </option>
+			<option value="14">14% </option>
             <option value="13">13% </option>
             <option value="12">12% </option>
             <option value="11">11% </option>
-			      <option value="10">10% </option>
+			<option value="10">10% </option>
+            <option value="9">9% </option>
+            <option value="8">8% </option>
+            <option value="7">7% </option>
+            <option value="6">6% </option>
+            <option value="5">5% </option>
+            <option value="4">4% </option>
+            <option value="3">3% </option>
+            <option value="2">2% </option>
+            <option value="1">1% </option>
+          </select>&nbsp&nbsp&nbsp&nbsp
+		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">min</label>&nbsp&nbsp&nbsp&nbsp
+		  <select name="hMin" id="hMin_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px; border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
+            <option value="20">20% </option>
+            <option value="19">19% </option>
+            <option value="18">18% </option>
+            <option value="17">17% </option>
+            <option value="16">16% </option>
+            <option value="15">15% </option>
+			<option value="14">14% </option>
+            <option value="13">13% </option>
+            <option value="12">12% </option>
+            <option value="11">11% </option>
+			<option value="10">10% </option>
             <option value="9">9% </option>
             <option value="8">8% </option>
             <option value="7">7% </option>
@@ -90,7 +138,7 @@ const char HTTP_FORM_SET_CORRECTION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE ht
           </select><br><br>
 		  <INPUT type="submit" > <style>input[type="submit"]{background-color: #3498DB;border: none;color: white;padding:10px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;}</style></div>
       </div>
-      </FORM> )rawliteral";   
+      </FORM>  )rawliteral";   
 
 class ESPCaptivePortal
 {

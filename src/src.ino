@@ -5,6 +5,7 @@
 #include "sensorRead.h"
 #include "utils.h"
 #include "WiFiOTA.h"
+#include <rom/rtc.h>
 
 DeviceState         state;
 DeviceState& deviceState = state;
@@ -12,115 +13,144 @@ ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
 
 
-
-void IRAM_ATTR ISR_Config_Button() {
-  static unsigned long buttonDebounce = 0;
-  if (millis() - buttonDebounce > MINIMUM_DEBOUNCE_TIME) {
-    RSTATE.isPortalActive = true;
-  }
-  buttonDebounce = millis();
-}
-
-
 void setup() {
   // put your setup code here, to run once:
-Serial.begin(115200);
-DEBUG_PRINTLN("Started ThingHz Wireless Temperature Sensor");
-if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
+  Serial.begin(115200);
+  DEBUG_PRINTLN("Started ThingHz Wireless Temperature Sensor");
+  if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
+  DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
+  DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(1));
+  if ( (int)rtc_get_reset_reason(0) == 1)  { // =  SW_CPU_RESET
+    RSTATE.isPortalActive  = true;
+    delay(1000);
+     if (!APConnection(AP_MODE_SSID)) {
+      DEBUG_PRINTLN("Error Setting Up AP Connection");
+      return;
+    }
+    delay(100);
+    captivePortal.servePortal(true);
+    captivePortal.beginServer();
+    delay(100);
+  }
+
   pinMode(SIG_PIN,              OUTPUT);
   pinMode(TEMP_SENSOR_PIN,      INPUT);
   pinMode(CONFIG_PIN,           INPUT);
   pinMode(VOLTAGE_DIV_PIN,      OUTPUT);
-  digitalWrite(VOLTAGE_DIV_PIN,LOW);
+  digitalWrite(VOLTAGE_DIV_PIN, LOW);
   shtInit();
   DSB112Init();
-   if (!isSHTAvailable()) {
+  if (!isSHTAvailable()) {
     DEBUG_PRINTLN("SHT Not connected");
   }
-   if(readSHT()){
-      Serial.println(RSTATE.temperature);
-      Serial.println(RSTATE.humidity);
-      if (((int)RSTATE.temperature < rtcState.targetTempMax && (int)RSTATE.temperature > rtcState.targetTempMin) && rtcState.wakeUpCount<MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("temperature is in range go to deepsleep");
-          DEBUG_PRINTF("Temp Value: %.1f\n",RSTATE.temperature);
-          Serial.println(rtcState.targetTempMax);
-          Serial.println(rtcState.targetTempMin);
-          Serial.println(rtcState.wakeUpCount);
-          rtcState.wakeUpCount++;
-          goToDeepSleep();
-      }else if (rtcState.wakeUpCount>=MAX_WAKEUP_COUNT) {
-          Serial.println(rtcState.wakeUpCount);
-          DEBUG_PRINTLN("has reacehed max offline count- now log the data");
-          rtcState.wakeUpCount = 0;
-      } 
-    }
-    
-  if (readDSB112()) {
-      if ((RSTATE.temperature < rtcState.targetTempMax|| RSTATE.temperature > rtcState.targetTempMin) && rtcState.wakeUpCount<MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("temperature is in range go to deepsleep");
-          DEBUG_PRINTF("Temp Value: %.1f\n",RSTATE.temperature);
-          Serial.println(rtcState.wakeUpCount);
-          rtcState.wakeUpCount++;
-          goToDeepSleep();
-      }else if (rtcState.wakeUpCount>=MAX_WAKEUP_COUNT) {
-          Serial.println(rtcState.wakeUpCount);
-          DEBUG_PRINTLN("has reacehed max offline count- now log the data");
-          rtcState.wakeUpCount = 0;
-      }  
-    }
-  
- 
 
-  attachInterrupt(digitalPinToInterrupt(CONFIG_PIN), ISR_Config_Button,   FALLING);  //pin Change High to Low
-  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
-  if (RSTATE.isPortalActive == true) {
-      captivePortal.servePortal(true);
-      captivePortal.beginServer();
-      if(!APConnection(AP_MODE_SSID)){
-        DEBUG_PRINTLN("Error Setting Up AP Connection");
-        return;
-      }
-      RSTATE.isPortalActive = false;
-  }
-  if(!reconnectWiFi((PSTATE.apSSID).c_str(),(PSTATE.apPass).c_str(),300)){
+  if (readSHT()) {
+    DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
+    DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
+    if (!checkAlarm(DEVICE_SENSOR_TYPE) && !RSTATE.isPortalActive) {
       goToDeepSleep();
-      DEBUG_PRINTLN("Error connecting to WiFi");
+    }
+  }
+
+  if (readDSB112()) {
+    DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
+    if (!checkAlarm(DEVICE_SENSOR_TYPE) && !RSTATE.isPortalActive) {
+      goToDeepSleep();
+    }
+  }
+
+
+  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
+  if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+    goToDeepSleep();
+    DEBUG_PRINTLN("Error connecting to WiFi");
   }
 }
 
 
 void loop() {
-  if (RSTATE.isPortalActive == true) {
-       if(!APConnection(AP_MODE_SSID)){
-        DEBUG_PRINTLN("Error Setting Up AP Connection");
-        return;
-      } 
-      captivePortal.servePortal(true);
-      captivePortal.beginServer();
-      RSTATE.isPortalActive = false;
-  }
-  if (!(WiFi.softAPgetStationNum() > 0)) {
-      if (!reconnectWiFi((PSTATE.apSSID).c_str(),(PSTATE.apPass).c_str(),300)) {
-          DEBUG_PRINTLN("Error connecting to WiFi");
+
+  if (!RSTATE.isPortalActive) {
+    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+      DEBUG_PRINTLN("Error connecting to WiFi");
     }
-      if (!cloudTalk.sendPayload()) {
-          DEBUG_PRINTLN("Error Sending Payload");
-      }
-      digitalWrite(SIG_PIN,HIGH);
-      delay(500);
-      digitalWrite(SIG_PIN,LOW);
-      DEBUG_PRINTLN("Going to sleep");
-      goToDeepSleep();
-     
+    if (!cloudTalk.sendPayload()) {
+      DEBUG_PRINTLN("Error Sending Payload");
+    }
+    digitalWrite(SIG_PIN, HIGH);
+    delay(500);
+    digitalWrite(SIG_PIN, LOW);
+    DEBUG_PRINTLN("Going to sleep");
+    goToDeepSleep();
   }
+
+  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT *MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
+      RSTATE.isPortalActive = false;
+    }
 }
 
-void goToDeepSleep(){
-    esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP*MICRO_SECS_MULITPLIER);
-      //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);   
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-    esp_deep_sleep_start();
+bool checkAlarm(uint8_t sProfile) {
+  bool isAlarm = false;
+  switch (sProfile) {
+    case SensorProfile::SensorNone :
+      isAlarm = true;
+      break;
+    case SensorProfile::SensorTemp : {
+        if (((int)RSTATE.temperature < rtcState.targetTempMax &&
+             (int)RSTATE.temperature > rtcState.targetTempMin) &&
+            rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
+          DEBUG_PRINTLN("Value is in range going to sleep");
+          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+          rtcState.wakeUpCount++;
+          isAlarm = false;
+        } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
+          DEBUG_PRINTLN("has Reached max offline cout now log data");
+          rtcState.wakeUpCount = 0;
+          isAlarm = true;
+        }
+      }
+      break;
+    case SensorProfile::SensorTH : {
+        if ((((int)RSTATE.temperature < rtcState.targetTempMax &&
+              (int)RSTATE.temperature > rtcState.targetTempMin) ||
+             ((int)RSTATE.humidity < rtcState.targetHumidityMax &&
+              (int)RSTATE.humidity > rtcState.targetHumidityMin)) &&
+            (rtcState.wakeUpCount < MAX_WAKEUP_COUNT)) {
+          DEBUG_PRINTLN("Value is in range going to sleep");
+          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+          rtcState.wakeUpCount++;
+          isAlarm = false;
+        } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
+          DEBUG_PRINTLN("has Reached max offline cout now log data");
+          rtcState.wakeUpCount = 0;
+          isAlarm = true;
+        }
+      }
+      break;
+    default:
+      if (((int)RSTATE.temperature < rtcState.targetTempMax &&
+           (int)RSTATE.temperature > rtcState.targetTempMin) &&
+          rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
+        DEBUG_PRINTLN("Value is in range going to sleep");
+        DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+        rtcState.wakeUpCount++;
+        isAlarm = false;
+      } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
+        DEBUG_PRINTLN("has Reached max offline cout now log data");
+        rtcState.wakeUpCount = 0;
+        isAlarm = true;
+      }
+      break;
+  }
+
+  return isAlarm;
 }
-  
+
+void goToDeepSleep() {
+  esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP * MICRO_SECS_MULITPLIER);
+  //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);
+  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+  esp_deep_sleep_start();
+}
