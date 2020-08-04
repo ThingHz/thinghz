@@ -106,6 +106,8 @@ class CloudTalk{
             DEBUG_PRINTLN(messageCreatePayload);          
             break;
           case SensorProfile::SensorTH :
+            PAYLOAD_TH.temp = RSTATE.temperature;
+            PAYLOAD_TH.humidity = RSTATE.humidity;
             DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
             snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"humidity\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
                      (RSTATE.macAddr).c_str(),

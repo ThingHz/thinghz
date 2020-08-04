@@ -36,10 +36,31 @@ if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
   digitalWrite(VOLTAGE_DIV_PIN,LOW);
   shtInit();
   DSB112Init();
-  
+   if (!isSHTAvailable()) {
+    DEBUG_PRINTLN("SHT Not connected");
+  }
+   if(readSHT()){
+      Serial.println(RSTATE.temperature);
+      Serial.println(RSTATE.humidity);
+      if (((int)RSTATE.temperature < rtcState.targetTempMax && (int)RSTATE.temperature > rtcState.targetTempMin) && rtcState.wakeUpCount<MAX_WAKEUP_COUNT) {
+          DEBUG_PRINTLN("temperature is in range go to deepsleep");
+          DEBUG_PRINTF("Temp Value: %.1f\n",RSTATE.temperature);
+          Serial.println(rtcState.targetTempMax);
+          Serial.println(rtcState.targetTempMin);
+          Serial.println(rtcState.wakeUpCount);
+          rtcState.wakeUpCount++;
+          goToDeepSleep();
+      }else if (rtcState.wakeUpCount>=MAX_WAKEUP_COUNT) {
+          Serial.println(rtcState.wakeUpCount);
+          DEBUG_PRINTLN("has reacehed max offline count- now log the data");
+          rtcState.wakeUpCount = 0;
+      } 
+    }
+    
   if (readDSB112()) {
       if ((RSTATE.temperature < rtcState.targetTempMax|| RSTATE.temperature > rtcState.targetTempMin) && rtcState.wakeUpCount<MAX_WAKEUP_COUNT) {
           DEBUG_PRINTLN("temperature is in range go to deepsleep");
+          DEBUG_PRINTF("Temp Value: %.1f\n",RSTATE.temperature);
           Serial.println(rtcState.wakeUpCount);
           rtcState.wakeUpCount++;
           goToDeepSleep();
@@ -50,9 +71,7 @@ if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
       }  
     }
   
-  if (!isSHTAvailable()) {
-    DEBUG_PRINTLN("SHT Not connected");
-  }
+ 
 
   attachInterrupt(digitalPinToInterrupt(CONFIG_PIN), ISR_Config_Button,   FALLING);  //pin Change High to Low
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());

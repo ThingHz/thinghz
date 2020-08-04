@@ -57,7 +57,7 @@ bool readDSB112()
 {
   tempSensor.requestTemperatures();
   float temp = tempSensor.getTempCByIndex(0);
-  if (isnan(temp)) {
+  if (isnan(temp) || (int)temp<-50) {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
     return false;
   }

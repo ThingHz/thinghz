@@ -46,7 +46,7 @@ String formApSsidName(String deviceId){
 // hardware identifier and rev
 #define DEVICE_TYPE         ThingHz_Standalone                    
 
-#define DEVICE_SENSOR_TYPE  SensorTemp
+#define DEVICE_SENSOR_TYPE  SensorTH
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
 #define HW_REV                          1 // poc using esp 12e/esp32, no lte modem
 
@@ -63,7 +63,7 @@ String formApSsidName(String deviceId){
 
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
-#define SECS_MULTIPLIER_DEEPSLEEP               300
+#define SECS_MULTIPLIER_DEEPSLEEP               100
 
 
 #define EEPROM_STORE_SIZE                       512
