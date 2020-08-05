@@ -15,7 +15,7 @@ DynamicJsonDocument jsonDocument(1024);
 
 
 
-const char urlmessageSend[] = "https://api.thinghz.com/v1/data"; 
+const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data"; 
 const char urlOtaSend[]     = "http://3.19.52.97:9955/api/data/download-file?filename=%s"; //URL for ota file download
 
 // payload structure for OTA result update to cloud
@@ -109,12 +109,12 @@ class CloudTalk{
             PAYLOAD_TH.temp = RSTATE.temperature;
             PAYLOAD_TH.humidity = RSTATE.humidity;
             DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"humidity\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                     (RSTATE.macAddr).c_str(),
+            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
                       PAYLOAD_TH.temp,
                       PAYLOAD_TH.humidity,
-                      RSTATE.batteryPercentage,
-                      PAYLOAD_TH.sensorProfile);
+                      PAYLOAD_TH.sensorProfile,
+                      RSTATE.batteryPercentage
+                      );
             break;    
           case SensorProfile::SensorTHM :
             DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");

@@ -146,15 +146,7 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
  * @todo:
  * We need to switch from EEPROM to RTC
 */
-typedef struct RTCState{
-    RTCState():targetTempMin(MIN_TARGET_TEMP),
-               targetHumidityMin(MIN_TARGET_HUMID),
-               targetTempMax(MAX_TARGET_TEMP),
-               targetHumidityMax(MAX_TARGET_HUMID),
-               wakeUpCount(MIN_WAKEUP_COUNT)
-               {
-               
-               }
+typedef struct{
     int targetTempMin;
     int targetHumidityMin;                               
     int targetTempMax; 
