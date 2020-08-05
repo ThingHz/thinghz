@@ -6,14 +6,7 @@
 #include "SensorPayload.h"
 
 // return battery voltage in "V" units
-float readBatValue()
-{
-  //formula for VD1 = 0.1M/(1.2M+0.1M)
-  float batVol = analogRead(BATTERY_VOL_PIN) * 0.00318; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]  
-  DEBUG_PRINTF("Battery=%f \n", batVol);
-  DEBUG_PRINTF("analogValue %d", analogRead(A0));
-  return batVol;
-}  
+ 
 
 /**
  * @brief:

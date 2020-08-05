@@ -63,8 +63,8 @@ String formApSsidName(String deviceId){
 
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
-#define SECS_MULTIPLIER_DEEPSLEEP               100
-#define SECS_PORTAL_WAIT                        240
+#define SECS_MULTIPLIER_DEEPSLEEP               900
+#define SECS_PORTAL_WAIT                        180
 
 
 #define EEPROM_STORE_SIZE                       512

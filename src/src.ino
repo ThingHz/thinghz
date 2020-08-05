@@ -6,6 +6,9 @@
 #include "utils.h"
 #include "WiFiOTA.h"
 #include <rom/rtc.h>
+#include <esp_wifi.h>
+#include <esp_bt.h>
+#include <driver/adc.h>
 
 DeviceState         state;
 DeviceState& deviceState = state;
@@ -25,7 +28,7 @@ void setup() {
   if ( (int)rtc_get_reset_reason(0) == 1)  { // =  SW_CPU_RESET
     RSTATE.isPortalActive  = true;
     delay(1000);
-     if (!APConnection(AP_MODE_SSID)) {
+    if (!APConnection(AP_MODE_SSID)) {
       DEBUG_PRINTLN("Error Setting Up AP Connection");
       return;
     }
@@ -34,12 +37,17 @@ void setup() {
     captivePortal.beginServer();
     delay(100);
   }
-
+  
+  if(setCpuFrequencyMhz(80)){
+      DEBUG_PRINTLN("Set to 80MHz");
+    }
+    
   pinMode(SIG_PIN,              OUTPUT);
   pinMode(TEMP_SENSOR_PIN,      INPUT);
   pinMode(CONFIG_PIN,           INPUT);
   pinMode(VOLTAGE_DIV_PIN,      OUTPUT);
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
+  analogSetAttenuation(ADC_0db);
   shtInit();
   DSB112Init();
   if (!isSHTAvailable()) {
@@ -60,8 +68,8 @@ void setup() {
       goToDeepSleep();
     }
   }
-
-
+  adc_power_on();
+  digitalWrite(VOLTAGE_DIV_PIN, LOW);
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
     goToDeepSleep();
@@ -86,9 +94,9 @@ void loop() {
     goToDeepSleep();
   }
 
-  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT *MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
-      RSTATE.isPortalActive = false;
-    }
+  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
+    RSTATE.isPortalActive = false;
+  }
 }
 
 bool checkAlarm(uint8_t sProfile) {
@@ -149,8 +157,24 @@ bool checkAlarm(uint8_t sProfile) {
 }
 
 void goToDeepSleep() {
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+  digitalWrite(VOLTAGE_DIV_PIN, HIGH);
+  btStop();
+  esp_wifi_stop();
+  esp_bt_controller_disable();
+  adc_power_off();
   esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP * MICRO_SECS_MULITPLIER);
   //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);
   esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
   esp_deep_sleep_start();
+}
+
+float readBatValue()
+{
+  //formula for VD1 = 1M/(3.9M+1M)
+  int adcVal = analogRead(BATTERY_VOL_PIN);
+  float batVol = adcVal * 0.001454; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
+  DEBUG_PRINTF("batteryVoltage %.1f\n",batVol);
+  return batVol;
 }
