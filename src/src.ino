@@ -20,11 +20,19 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   DEBUG_PRINTLN("Started ThingHz Wireless Temperature Sensor");
+  
   if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
+  
+  bool rc = deviceState.load();
+  if (!rc) {
+    DEBUG_PRINTLN("EEPROM Values not loaded");
+  } else {
+    DEBUG_PRINTLN("Values Loaded");
+  }
+  
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
-  DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(1));
   if ( (int)rtc_get_reset_reason(0) == 1)  { // =  SW_CPU_RESET
     RSTATE.isPortalActive  = true;
     if (!APConnection(AP_MODE_SSID)) {
@@ -35,8 +43,9 @@ void setup() {
     captivePortal.servePortal(true);
     captivePortal.beginServer();
     delay(100);
+    rtcState.wakeUpCount++;
   }
-
+  
   if (!RSTATE.isPortalActive) {
       if (setCpuFrequencyMhz(80)) {
           DEBUG_PRINTLN("Set to 80MHz");
@@ -51,6 +60,7 @@ void setup() {
   analogSetAttenuation(ADC_0db);
   shtInit();
   DSB112Init();
+  
   if (!isSHTAvailable()) {
     DEBUG_PRINTLN("SHT Not connected");
   }
@@ -71,11 +81,13 @@ void setup() {
   }
 
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
+  
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
   }
+  
 }
 
 
@@ -84,6 +96,7 @@ void loop() {
   if (!RSTATE.isPortalActive) {
     if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
       DEBUG_PRINTLN("Error connecting to WiFi");
+      goToDeepSleep();
     }
     if (!cloudTalk.sendPayload()) {
       DEBUG_PRINTLN("Error Sending Payload");
@@ -96,9 +109,9 @@ void loop() {
   }
 
   if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
-    RSTATE.isPortalActive = false;
-  }
-}
+      RSTATE.isPortalActive = false;
+     }
+ }
 
 bool checkAlarm(uint8_t sProfile) {
   bool isAlarm = false;
@@ -143,6 +156,7 @@ bool checkAlarm(uint8_t sProfile) {
         }else {
             DEBUG_PRINTLN("Values not in range going to sleep");
             isAlarm = true;
+            rtcState.wakeUpCount = 0;
           }
       }
       break;
@@ -167,6 +181,12 @@ bool checkAlarm(uint8_t sProfile) {
 
 void goToDeepSleep() {
   DEBUG_PRINTLN("going to sleep");
+  bool rc = deviceState.store();
+      if (!rc) {
+          DEBUG_PRINTLN("EEPROM Values not loaded");
+      } else {
+          DEBUG_PRINTLN("Values Loaded");
+      }
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   digitalWrite(VOLTAGE_DIV_PIN, HIGH);
@@ -184,7 +204,7 @@ float readBatValue()
 {
   //formula for VD1 = 1M/(3.9M+1M)
   int adcVal = analogRead(BATTERY_VOL_PIN);
-  float batVol = adcVal * 0.001454; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
+  float batVol = adcVal * 0.001196; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
   DEBUG_PRINTF("adcVal %d\n",adcVal);
   DEBUG_PRINTF("batteryVoltage %.1f\n",batVol);
   return batVol;
