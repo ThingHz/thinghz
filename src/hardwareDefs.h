@@ -6,13 +6,13 @@ enum DeviceType {
   ThingHz_Standalone = 1,                // Sensor Node will work as a standalone device and talks to cloud
   ThingHz_EspNow_Node,                   // Sensor Node will talk back and forth with the Gateway using ESPNow
   ThingHz_EspNow_WiFiLteHaul_Gateway,    // gateway is powered device that comMunicate with Sensor Nodes using ESPNOw Protocol and post the data to cloud
-  ThingHz_CC1100_Node,                   // Sensor Node will talk back and forth with the Gateway using CC1100 
+  ThingHz_CC1100_Node,                   // Sensor Node will talk back and forth with the Gateway using CC1100
   ThingHz_CC1100_WiFiLTEHaul_Gateway,    // gateway is powered device that communicate with Sensor Nodes using CC1100 and post the data to cloud
   DeviceTypeUnknown = 5000
 };
 
 // used to convert enum to strings for sending to could in http requests or printing in debug messages
-const char* deviceTypeEnumToString(uint8_t devType){
+const char* deviceTypeEnumToString(uint8_t devType) {
   static const char* const map[] = { "ThingHz_Standalone", "ThingHz_EspNow_Node",
                                      "ThingHz_EspNow_WiFiLteHaul_Gateway", "ThingHz_CC1100_Node",
                                      "ThingHz_CC1100_WiFiLTEHaul_Gateway", "DeviceTypeUnknown"
@@ -22,8 +22,8 @@ const char* deviceTypeEnumToString(uint8_t devType){
 
 #define AP_MODE_SSID "ThingHz-"
 
-String formApSsidName(String deviceId){
-    return String(AP_MODE_SSID + deviceId);
+String formApSsidName(String deviceId) {
+  return String(AP_MODE_SSID + deviceId);
 }
 
 #define SPIFF_OTA_PATH "/"
@@ -32,7 +32,7 @@ String formApSsidName(String deviceId){
 //#define USE_RTOS 1
 
 /**
- * @todo: We need to do this part later
+   @todo: We need to do this part later
 */
 #define ESP_NOW      1
 
@@ -44,7 +44,7 @@ String formApSsidName(String deviceId){
 #define UDP_PACKET_BROADCAST 1
 
 // hardware identifier and rev
-#define DEVICE_TYPE         ThingHz_Standalone                    
+#define DEVICE_TYPE         ThingHz_Standalone
 
 #define DEVICE_SENSOR_TYPE  SensorTH
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
@@ -65,7 +65,7 @@ String formApSsidName(String deviceId){
 #define MICRO_SECS_MULITPLIER                   1000000
 #define SECS_MULTIPLIER_DEEPSLEEP               900 //900
 #define SECS_PORTAL_WAIT                        120 //120
-#define HTTP_CONNEC_TIMEOUT_IN_MS               100 
+#define HTTP_CONNEC_TIMEOUT_IN_MS               100
 
 #define EEPROM_STORE_SIZE                       512
 #define EEPROM_STORAGE_FORMAT_VERSION           "c1"
@@ -73,7 +73,7 @@ String formApSsidName(String deviceId){
 
 #define WAN_WIFI_SSID_DEFAULT                    "Agnextsn_compass"
 #define WAN_WIFI_PASS_DEFAULT                    "Agnext0419"
-#define DEVICE_ID_DEFAULT                        "THINGHZSN0001" 
+#define DEVICE_ID_DEFAULT                        "THINGHZSN0001"
 
 
 #define BATTERY_INITIAL_READING    0
@@ -102,7 +102,7 @@ String formApSsidName(String deviceId){
 #else
 #define DEBUG_PRINTF(...)
 #define DEBUG_PRINTLN(...)
-#define DEBUG_PRINT(...)            
+#define DEBUG_PRINT(...)
 #endif
 
 

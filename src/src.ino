@@ -20,18 +20,18 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   DEBUG_PRINTLN("Started ThingHz Wireless Temperature Sensor");
-  
+
   if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
-  
+
   bool rc = deviceState.load();
   if (!rc) {
     DEBUG_PRINTLN("EEPROM Values not loaded");
   } else {
     DEBUG_PRINTLN("Values Loaded");
   }
-  
+
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
   if ( (int)rtc_get_reset_reason(0) == 1)  { // =  SW_CPU_RESET
     RSTATE.isPortalActive  = true;
@@ -44,13 +44,13 @@ void setup() {
     captivePortal.beginServer();
     delay(100);
   }
-  
+
   if (!RSTATE.isPortalActive) {
-      if (setCpuFrequencyMhz(80)) {
-          DEBUG_PRINTLN("Set to 80MHz");
+    if (setCpuFrequencyMhz(80)) {
+      DEBUG_PRINTLN("Set to 80MHz");
     }
   }
-    
+
   pinMode(SIG_PIN,              OUTPUT);
   pinMode(TEMP_SENSOR_PIN,      INPUT);
   pinMode(CONFIG_PIN,           INPUT);
@@ -59,7 +59,7 @@ void setup() {
   analogSetAttenuation(ADC_0db);
   shtInit();
   DSB112Init();
-  
+
   if (!isSHTAvailable()) {
     DEBUG_PRINTLN("SHT Not connected");
   }
@@ -69,7 +69,7 @@ void setup() {
     DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
     if (!checkAlarm(DEVICE_SENSOR_TYPE) && !RSTATE.isPortalActive) {
       goToDeepSleep();
-   }
+    }
   }
 
   if (readDSB112()) {
@@ -80,12 +80,12 @@ void setup() {
   }
 
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
-  
+
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
-  } 
+  }
 }
 
 
@@ -107,9 +107,9 @@ void loop() {
   }
 
   if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
-      RSTATE.isPortalActive = false;
-     }
- }
+    RSTATE.isPortalActive = false;
+  }
+}
 
 bool checkAlarm(uint8_t sProfile) {
   bool isAlarm = false;
@@ -122,21 +122,21 @@ bool checkAlarm(uint8_t sProfile) {
         if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
              (int)RSTATE.temperature > PSTATE.targetTempMin) &&
             rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
-            DEBUG_PRINTLN("Value is in range going to sleep");
-            DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-            rtcState.wakeUpCount++;
-            rtcState.isEscalation = 0;
-            isAlarm = false;
+          DEBUG_PRINTLN("Value is in range going to sleep");
+          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+          rtcState.wakeUpCount++;
+          rtcState.isEscalation = 0;
+          isAlarm = false;
         } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
           DEBUG_PRINTLN("has Reached max offline cout now log data");
           rtcState.wakeUpCount = 0;
           isAlarm = true;
-        }else {
-            DEBUG_PRINTLN("Values not in range going to sleep");
-            rtcState.isEscalation++;
-            rtcState.wakeUpCount = 0;
-            isAlarm = true;
-          }
+        } else {
+          DEBUG_PRINTLN("Values not in range going to sleep");
+          rtcState.isEscalation++;
+          rtcState.wakeUpCount = 0;
+          isAlarm = true;
+        }
       }
       break;
     case SensorProfile::SensorTH : {
@@ -155,12 +155,12 @@ bool checkAlarm(uint8_t sProfile) {
           DEBUG_PRINTLN("has Reached max offline cout now log data");
           rtcState.wakeUpCount = 0;
           isAlarm = true;
-        }else {
-            DEBUG_PRINTLN("Values not in range going to sleep");
-            isAlarm = true;
-            rtcState.wakeUpCount = 0;
-            rtcState.isEscalation++;
-          }
+        } else {
+          DEBUG_PRINTLN("Values not in range going to sleep");
+          isAlarm = true;
+          rtcState.wakeUpCount = 0;
+          rtcState.isEscalation++;
+        }
       }
       break;
     default:
@@ -177,11 +177,11 @@ bool checkAlarm(uint8_t sProfile) {
         rtcState.wakeUpCount = 0;
         isAlarm = true;
       } else {
-            DEBUG_PRINTLN("Values not in range going to sleep");
-            isAlarm = true;
-            rtcState.wakeUpCount = 0;
-            rtcState.isEscalation++;
-          }
+        DEBUG_PRINTLN("Values not in range going to sleep");
+        isAlarm = true;
+        rtcState.wakeUpCount = 0;
+        rtcState.isEscalation++;
+      }
       break;
   }
 
@@ -191,11 +191,11 @@ bool checkAlarm(uint8_t sProfile) {
 void goToDeepSleep() {
   DEBUG_PRINTLN("going to sleep");
   bool rc = deviceState.store();
-      if (!rc) {
-          DEBUG_PRINTLN("EEPROM Values not loaded");
-      } else {
-          DEBUG_PRINTLN("Values Loaded");
-      }
+  if (!rc) {
+    DEBUG_PRINTLN("EEPROM Values not loaded");
+  } else {
+    DEBUG_PRINTLN("Values Loaded");
+  }
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   digitalWrite(VOLTAGE_DIV_PIN, HIGH);
@@ -214,7 +214,7 @@ float readBatValue()
   //formula for VD1 = 1M/(3.9M+1M)
   int adcVal = analogRead(BATTERY_VOL_PIN);
   float batVol = adcVal * 0.004923; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
-  DEBUG_PRINTF("adcVal %d\n",adcVal);
-  DEBUG_PRINTF("batteryVoltage %.1f\n",batVol);
+  DEBUG_PRINTF("adcVal %d\n", adcVal);
+  DEBUG_PRINTF("batteryVoltage %.1f\n", batVol);
   return batVol;
 }

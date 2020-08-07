@@ -10,12 +10,12 @@
 #include "utils.h"
 #include "SensorPayload.h"
 
-DynamicJsonDocument jsonDocument(1024); 
+DynamicJsonDocument jsonDocument(1024);
 #define JSON_MSG_MAX_LEN                        512
 
 
 
-const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data"; 
+const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data";
 const char urlOtaSend[]     = "http://3.19.52.97:9955/api/data/download-file?filename=%s"; //URL for ota file download
 
 // payload structure for OTA result update to cloud
@@ -23,25 +23,25 @@ const char COOLNEXT_OTA_BODY[] = "{\"deviceId\":\"%s\",\"firmwareVersion\":\"%s\
 char otaPayload[JSON_MSG_MAX_LEN];
 
 /**
- * @brief: FWInfo class for storing FW related information
+   @brief: FWInfo class for storing FW related information
 */
 
 class FWInfo {
-  public: 
+  public:
     uint8_t fwVersion = 0;
     uint32_t fileSize = 0;
-    uint32_t crc = 0; 
+    uint32_t crc = 0;
 };
 
-class CloudTalk{
+class CloudTalk {
   public:
     /**
-     * @brief: Create http link and send the device payload to cloud
-     * @return: true when everything works right  
+       @brief: Create http link and send the device payload to cloud
+       @return: true when everything works right
     */
-     
+
     bool sendPayload()
-    { 
+    {
       String retJson;
       int httpCode;
       HTTPClient http;
@@ -61,103 +61,103 @@ class CloudTalk{
       http.end();
 
       FWInfo fwInfo = extractFWVersion(retJson);
-        
+
       if (fwInfo.fwVersion != PSTATE.newfWVersion) {
-          DEBUG_PRINTF("current paylod processed, old fw version : %u, new fw version: %u\n", PSTATE.newfWVersion, fwInfo.fwVersion );
-          
-          String remoteFwFilename = prepareRemoteFWFileName(ThingHz_Standalone,
-                                    HW_REV,
-                                    fwInfo.fwVersion);
+        DEBUG_PRINTF("current paylod processed, old fw version : %u, new fw version: %u\n", PSTATE.newfWVersion, fwInfo.fwVersion );
 
-          size_t filesize = fetchOTAFile(remoteFwFilename, fwInfo.fileSize, fwInfo.crc);
+        String remoteFwFilename = prepareRemoteFWFileName(ThingHz_Standalone,
+                                  HW_REV,
+                                  fwInfo.fwVersion);
+
+        size_t filesize = fetchOTAFile(remoteFwFilename, fwInfo.fileSize, fwInfo.crc);
 
 
-          if (filesize) {
-              DEBUG_PRINTLN("Processing firmware upgrade for self");
-              PSTATE.newfWVersion = fwInfo.fwVersion;
-              PSTATE.isOtaAvailable = 1;
-              deviceState.store();
+        if (filesize) {
+          DEBUG_PRINTLN("Processing firmware upgrade for self");
+          PSTATE.newfWVersion = fwInfo.fwVersion;
+          PSTATE.isOtaAvailable = 1;
+          deviceState.store();
         }
       }
       return true;
     }
 
     /**
-     * @brief: Create message payload
-     * @param: Sensor profile of sesnor type
-     * @return: message payload array   
+       @brief: Create message payload
+       @param: Sensor profile of sesnor type
+       @return: message payload array
     */
-    
-    String createPayload(uint8_t sProfile){
-        char messageCreatePayload[JSON_MSG_MAX_LEN];
-        switch(sProfile){
-          case SensorProfile::SensorNone :
-            DEBUG_PRINTLN("NO Sensor Found");
-            break;
-          case SensorProfile::SensorTemp :
-            PAYLOAD_T.temp = RSTATE.temperature;
-            DEBUG_PRINTLN("Creating payload for Temp Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
-                      PAYLOAD_T.temp,
-                      RSTATE.humidity,
-                      PAYLOAD_TH.sensorProfile,
-                      RSTATE.batteryPercentage
-                      );
-            DEBUG_PRINTLN(messageCreatePayload);          
-            break;
-          case SensorProfile::SensorTH :
-            PAYLOAD_TH.temp = RSTATE.temperature;
-            PAYLOAD_TH.humidity = RSTATE.humidity;
-            DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
-                      PAYLOAD_TH.temp,
-                      PAYLOAD_TH.humidity,
-                      PAYLOAD_TH.sensorProfile,
-                      RSTATE.batteryPercentage
-                      );
-            break;    
-          case SensorProfile::SensorTHM :
-            DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                     (RSTATE.macAddr).c_str(),
-                      PAYLOAD_THM.temp,
-                      PAYLOAD_THM.humidity,
-                      PAYLOAD_THM.moisture,
-                      RSTATE.batteryPercentage,
-                      PAYLOAD_TH.sensorProfile);
-           
-            break;
-          case SensorProfile::SensorGas :
-            DEBUG_PRINTLN("Creating payload for Gas Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"gas\":\"%u\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                     (RSTATE.macAddr).c_str(),
-                      PAYLOAD_GAS.gas,
-                      RSTATE.batteryPercentage,
-                      PAYLOAD_GAS.sensorProfile);
-            break;
-          case SensorProfile::SensorGyroAccel :
-            DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-            snprintf(messageCreatePayload,JSON_MSG_MAX_LEN,"{\"deviceId\":\"%s\",\"gyro\":\"%d\",\"accel\":\"%d\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                     (RSTATE.macAddr).c_str(),
-                      PAYLOAD_GA.gyro,
-                      PAYLOAD_GA.accel,
-                      RSTATE.batteryPercentage,
-                      PAYLOAD_TH.sensorProfile);
-            break;
-          default:
-            DEBUG_PRINTLN("Not a valid Sensor");
-            break;    
-        }
-        return String(messageCreatePayload);
+
+    String createPayload(uint8_t sProfile) {
+      char messageCreatePayload[JSON_MSG_MAX_LEN];
+      switch (sProfile) {
+        case SensorProfile::SensorNone :
+          DEBUG_PRINTLN("NO Sensor Found");
+          break;
+        case SensorProfile::SensorTemp :
+          PAYLOAD_T.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
+                   PAYLOAD_T.temp,
+                   RSTATE.humidity,
+                   PAYLOAD_TH.sensorProfile,
+                   RSTATE.batteryPercentage
+                  );
+          DEBUG_PRINTLN(messageCreatePayload);
+          break;
+        case SensorProfile::SensorTH :
+          PAYLOAD_TH.temp = RSTATE.temperature;
+          PAYLOAD_TH.humidity = RSTATE.humidity;
+          DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
+                   PAYLOAD_TH.temp,
+                   PAYLOAD_TH.humidity,
+                   PAYLOAD_TH.sensorProfile,
+                   RSTATE.batteryPercentage
+                  );
+          break;
+        case SensorProfile::SensorTHM :
+          DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
+                   (RSTATE.macAddr).c_str(),
+                   PAYLOAD_THM.temp,
+                   PAYLOAD_THM.humidity,
+                   PAYLOAD_THM.moisture,
+                   RSTATE.batteryPercentage,
+                   PAYLOAD_TH.sensorProfile);
+
+          break;
+        case SensorProfile::SensorGas :
+          DEBUG_PRINTLN("Creating payload for Gas Sensor");
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"gas\":\"%u\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
+                   (RSTATE.macAddr).c_str(),
+                   PAYLOAD_GAS.gas,
+                   RSTATE.batteryPercentage,
+                   PAYLOAD_GAS.sensorProfile);
+          break;
+        case SensorProfile::SensorGyroAccel :
+          DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"gyro\":\"%d\",\"accel\":\"%d\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
+                   (RSTATE.macAddr).c_str(),
+                   PAYLOAD_GA.gyro,
+                   PAYLOAD_GA.accel,
+                   RSTATE.batteryPercentage,
+                   PAYLOAD_TH.sensorProfile);
+          break;
+        default:
+          DEBUG_PRINTLN("Not a valid Sensor");
+          break;
+      }
+      return String(messageCreatePayload);
     }
 
 
     /**
-     * @brief: update the ota version during successful update
-     * @return: true if everything happened as expected   
+       @brief: update the ota version during successful update
+       @return: true if everything happened as expected
     */
 
-    bool updateOTAversion(){
+    bool updateOTAversion() {
       //strncpy(devState.rtcState.newfWVersion, fwValue.c_str(), sizeof(devState.rtcState.newfWVersion));
       String fWversion = String(PSTATE.newfWVersion);
       //DEBUG_PRINTLN("New fw Version %s",fWversion);
@@ -171,16 +171,16 @@ class CloudTalk{
         return false;
       }
       String otaLoad = http.getString();
-      DEBUG_PRINTF("ota payload for updation\t%s\n",otaLoad.c_str());
+      DEBUG_PRINTF("ota payload for updation\t%s\n", otaLoad.c_str());
       DEBUG_PRINTLN("version updated");
       PSTATE.isOtaAvailable = 0;
       http.end();
-      return true; 
+      return true;
     }
 
     /**
-     * @brief: Extract the fw version for the response payload
-     * @return: true if everything happened as expected   
+       @brief: Extract the fw version for the response payload
+       @return: true if everything happened as expected
     */
 
     FWInfo extractFWVersion(String load) const
@@ -190,13 +190,13 @@ class CloudTalk{
       if (load == NULL) {
         return fwInfo;
       }
-      
 
-      DeserializationError error = deserializeJson(jsonDocument,load);
-      
-      if(error){
-          DEBUG_PRINTLN("failed to deserialize");
-          return fwInfo;
+
+      DeserializationError error = deserializeJson(jsonDocument, load);
+
+      if (error) {
+        DEBUG_PRINTLN("failed to deserialize");
+        return fwInfo;
       }
 
       // TODO:: need to think better about this, if false what do we do
@@ -257,16 +257,16 @@ class CloudTalk{
         DEBUG_PRINTLN("expected file size is zero, not doing anything");
         return 0;
       }
-       if (!SPIFFS.begin(true)) {
-         DEBUG_PRINTLN("An Error has occurred while mounting SPIFFS, fw upgrades will not work");
+      if (!SPIFFS.begin(true)) {
+        DEBUG_PRINTLN("An Error has occurred while mounting SPIFFS, fw upgrades will not work");
       } else {
-         DEBUG_PRINTLN("sucessfully mouted spiffs");
+        DEBUG_PRINTLN("sucessfully mouted spiffs");
       }
-      
+
       size_t otaFileSize = 0;
 
       String fullPath = fullyResolvedFilePath(SPIFF_OTA_PATH, remoteFileName);
-      DEBUG_PRINTF("Ota file path %s\t\n",fullPath.c_str());
+      DEBUG_PRINTF("Ota file path %s\t\n", fullPath.c_str());
       // check if path exists, return if file is already present
       bool fileExists = SPIFFS.exists(fullPath);
       if (fileExists) {
@@ -302,7 +302,7 @@ class CloudTalk{
       HTTPClient http;
       char urlWithFilename[JSON_MSG_MAX_LEN];
       snprintf(urlWithFilename, JSON_MSG_MAX_LEN, urlOtaSend, remoteFileName.c_str());
-      DEBUG_PRINTF("OTA file url %s\t\n",String(urlWithFilename).c_str());
+      DEBUG_PRINTF("OTA file url %s\t\n", String(urlWithFilename).c_str());
       int connected = http.begin(urlWithFilename);
 
       if (!connected) {
@@ -334,4 +334,4 @@ class CloudTalk{
 
 };
 
- #endif
+#endif

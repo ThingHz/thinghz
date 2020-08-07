@@ -6,16 +6,16 @@
 #include "SensorPayload.h"
 
 // return battery voltage in "V" units
- 
+
 
 /**
- * @brief:
- * Helper function to get the Battery percentage.
- * Battery voltage is mapped to 0 to 100 factor
- * @param:
- * Battery Voltage in float 
- * @return:
- * battery percentage in int   
+   @brief:
+   Helper function to get the Battery percentage.
+   Battery voltage is mapped to 0 to 100 factor
+   @param:
+   Battery Voltage in float
+   @return:
+   battery percentage in int
 */
 int getBatteryPercentage(const float battVoltage) {
   int maxVal = BATT_VOL_100 * 100; // scale by 100
@@ -35,35 +35,35 @@ int getBatteryPercentage(const float battVoltage) {
 
 
 /**
- * @brief:
- * Helper function to get the RSSI percentage from the RSSI in db of available Networks
- * @param:
- * RSSI in db 
- * @return:
- * rssi in percentage   
+   @brief:
+   Helper function to get the RSSI percentage from the RSSI in db of available Networks
+   @param:
+   RSSI in db
+   @return:
+   rssi in percentage
 */
 
 int getRSSIasQuality(int RSSI) {
-      int quality = 0;
-      if (RSSI <= -100) {
-        quality = 0;
-      } else if (RSSI >= -50) {
-        quality = 100;
-      } else {
-        quality = 2 * (RSSI + 100);
-      }
-      return quality;
-    }
+  int quality = 0;
+  if (RSSI <= -100) {
+    quality = 0;
+  } else if (RSSI >= -50) {
+    quality = 100;
+  } else {
+    quality = 2 * (RSSI + 100);
+  }
+  return quality;
+}
 
 /**
- * @brief:
- * Helper function to get if there are multiple faliure.
- * @todo:
- * Do we need this we have another helper funtion for the same purpose
- * @param:
- * Device State enum 
- * @return:
- * true for multiple device event   
+   @brief:
+   Helper function to get if there are multiple faliure.
+   @todo:
+   Do we need this we have another helper funtion for the same purpose
+   @param:
+   Device State enum
+   @return:
+   true for multiple device event
 */
 
 bool isMultiDeviceEvent(int n) {
@@ -81,27 +81,27 @@ bool isMultiDeviceEvent(int n) {
 }
 
 /**
- * @brief:
- * Checks for the deviceStateEvent set bits. 
- * @param:
- * deviceEvent      bit position  
- * @return:
- * true if bit is set   
+   @brief:
+   Checks for the deviceStateEvent set bits.
+   @param:
+   deviceEvent      bit position
+   @return:
+   true if bit is set
 */
 
-bool checkSetBit(int state, int setBit){
-  bool isBitSet = state & (1<<setBit);
-  if(!isBitSet){
-      return false;
-    }
-    return true;
+bool checkSetBit(int state, int setBit) {
+  bool isBitSet = state & (1 << setBit);
+  if (!isBitSet) {
+    return false;
+  }
+  return true;
 }
 
 /**
- * @brief:
- * Prepares a remote file name for ota   
- * @return:
- * String    
+   @brief:
+   Prepares a remote file name for ota
+   @return:
+   String
 */
 
 String prepareRemoteFWFileName(uint8_t devType, uint8_t hwRev, uint8_t newFwRev)

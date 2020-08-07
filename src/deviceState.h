@@ -7,8 +7,8 @@
 
 
 /**
- * @brief:
- * Device State Enum   
+   @brief:
+   Device State Enum
 */
 enum DeviceStateEvent {
   DSE_None                    = 0,
@@ -21,7 +21,7 @@ enum DeviceStateEvent {
   DSE_HUMIDAlarm              = 1 << 6,
   DSE_GASFaulty               = 1 << 7,
   DSE_GYROFaulty              = 1 << 8,
-  DSE_LIGHTFaulty             = 1 << 9   
+  DSE_LIGHTFaulty             = 1 << 9
 };
 
 //advance declaration
@@ -29,12 +29,12 @@ class PersistantStateStorageFormat;
 
 
 /**
- * @brief:
- * Class for runtime Device status
+   @brief:
+   Class for runtime Device status
 */
 class RunTimeState {
   public:
-    RunTimeState(): 
+    RunTimeState():
       deviceEvents(DeviceStateEvent::DSE_None),
       isWiFiConnected(false),
       isAPActive(false),
@@ -45,7 +45,7 @@ class RunTimeState {
       temperature(INVALID_TEMP_READING),
       humidity(INVALID_HUMIDITY_READING)
     {
-    
+
     }
 
     uint deviceEvents;
@@ -56,29 +56,29 @@ class RunTimeState {
     String macAddr;
     int batteryPercentage;
     float temperature;
-    float humidity;    
+    float humidity;
 };
 
 /**
- * @brief:
- * Class EEPROM device format
+   @brief:
+   Class EEPROM device format
 */
 
 class PersistantState {
   public:
-    PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT), 
-                        apPass(WAN_WIFI_PASS_DEFAULT),
-                        deviceId(DEVICE_ID_DEFAULT),
-                        targetTempMin(MIN_TARGET_TEMP),
-                        targetHumidityMin(MIN_TARGET_HUMID),                               
-                        targetTempMax(MAX_TARGET_TEMP), 
-                        targetHumidityMax(MAX_TARGET_HUMID),
-                        tempCalibration(CALIBRATION_LEVEL),
-                        isOtaAvailable(0), 
-                        newfWVersion(0)
-                        {
+    PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
+      apPass(WAN_WIFI_PASS_DEFAULT),
+      deviceId(DEVICE_ID_DEFAULT),
+      targetTempMin(MIN_TARGET_TEMP),
+      targetHumidityMin(MIN_TARGET_HUMID),
+      targetTempMax(MAX_TARGET_TEMP),
+      targetHumidityMax(MAX_TARGET_HUMID),
+      tempCalibration(CALIBRATION_LEVEL),
+      isOtaAvailable(0),
+      newfWVersion(0)
+    {
 
-                        }
+    }
 
     PersistantState(const PersistantStateStorageFormat& persistantStore);
 
@@ -87,11 +87,11 @@ class PersistantState {
               (apPass == rhs.apPass) &&
               (deviceId == rhs.deviceId) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
-              (newfWVersion == rhs.newfWVersion)&&
-              (targetTempMin == rhs.targetTempMin)&&
-              (targetHumidityMin == rhs.targetHumidityMin)&&
-              (targetTempMax == rhs.targetTempMax)&&
-              (targetHumidityMax == rhs.targetHumidityMax)&&
+              (newfWVersion == rhs.newfWVersion) &&
+              (targetTempMin == rhs.targetTempMin) &&
+              (targetHumidityMin == rhs.targetHumidityMin) &&
+              (targetTempMax == rhs.targetTempMax) &&
+              (targetHumidityMax == rhs.targetHumidityMax) &&
               (tempCalibration == rhs.tempCalibration));
     }
     // public data members
@@ -99,8 +99,8 @@ class PersistantState {
     String apPass;
     String deviceId;
     int targetTempMin;
-    int targetHumidityMin;                               
-    int targetTempMax; 
+    int targetHumidityMin;
+    int targetTempMax;
     int targetHumidityMax;
     int tempCalibration;
     uint8_t isOtaAvailable;
@@ -108,11 +108,11 @@ class PersistantState {
 };
 
 /**
- * @brief:
- * Structure EEPROM Storage format
- * this shadwos persistnat state structure in every way except that
- * it replaces complex data types with POD types, complex data can't be directly stored and
- * read back as is. It was required because we don't want to deal with c strings in rest of the code.
+   @brief:
+   Structure EEPROM Storage format
+   this shadwos persistnat state structure in every way except that
+   it replaces complex data types with POD types, complex data can't be directly stored and
+   read back as is. It was required because we don't want to deal with c strings in rest of the code.
 */
 
 struct PersistantStateStorageFormat {
@@ -123,8 +123,8 @@ struct PersistantStateStorageFormat {
     char apSSID[30];
     char apPass[30];
     int setTempMin;
-    int setHumidityMin;                               
-    int setTempMax; 
+    int setHumidityMin;
+    int setTempMax;
     int setHumidityMax;
     int tempCalibration;
     uint8_t isOtaAvailable;
@@ -136,8 +136,8 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
   targetTempMin = persistantStore.setTempMin ;
-  targetHumidityMin = persistantStore.setHumidityMin;                               
-  targetTempMax = persistantStore.setTempMax; 
+  targetHumidityMin = persistantStore.setHumidityMin;
+  targetTempMax = persistantStore.setTempMax;
   targetHumidityMax = persistantStore.setHumidityMax;
   tempCalibration = persistantStore.tempCalibration;
   isOtaAvailable = persistantStore.isOtaAvailable;
@@ -159,29 +159,29 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
 }
 
 /**
- * @brief:
- * Structure RTC State
- * @todo:
- * We need to switch from EEPROM to RTC
+   @brief:
+   Structure RTC State
+   @todo:
+   We need to switch from EEPROM to RTC
 */
-typedef struct{
-    int isEscalation;                  
-    int wakeUpCount;
-}RTCState; 
+typedef struct {
+  int isEscalation;
+  int wakeUpCount;
+} RTCState;
 RTC_DATA_ATTR RTCState rtcState;
- 
+
 class DeviceState
 {
   public:
     // public data members
     RunTimeState        runTimeState;
     PersistantState     persistantState;
-    
-    
+
+
     DeviceState() {
-    /**
-     * @todo:There was a problem in begining it here
-    */  
+      /**
+         @todo:There was a problem in begining it here
+      */
       //EEPROM.begin(EEPROM_STORE_SIZE);
     }
     ~DeviceState() {
@@ -189,8 +189,8 @@ class DeviceState
     }
 
     /**
-     * @brief:Load and Store helper functions
-    */  
+       @brief:Load and Store helper functions
+    */
     bool store()
     {
       bool retValue = false;
@@ -201,7 +201,7 @@ class DeviceState
       }
       return retValue;
     }
-   
+
     bool load()
     {
       bool retValue = false;
@@ -215,7 +215,7 @@ class DeviceState
 
   private:
     PersistantState eepromRealState;
-    
+
     bool storeEEPROM()
     {
       if (persistantState == eepromRealState) {

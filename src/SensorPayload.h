@@ -5,78 +5,78 @@
 #include "assert.h"
 #include "deviceState.h"
 
-enum SensorProfile{
-    SensorNone  = 1,
-    SensorTemp,
-    SensorTH,
-    SensorGas,
-    SensorGyroAccel,
-    SensorTHM
+enum SensorProfile {
+  SensorNone  = 1,
+  SensorTemp,
+  SensorTH,
+  SensorGas,
+  SensorGyroAccel,
+  SensorTHM
 };
 
-const char* sensorProfileToString(uint8_t sProfile){
-    //Here After and before const means that you can not change pointer as well as data
-    static const char* const map[] = {
-        "SensorNone", "SensorTemp", "SensorTH", "SensorGas"
-        "SensorGyroAccel", "SensorTHM"
-    };
-    return map[sProfile];
+const char* sensorProfileToString(uint8_t sProfile) {
+  //Here After and before const means that you can not change pointer as well as data
+  static const char* const map[] = {
+    "SensorNone", "SensorTemp", "SensorTH", "SensorGas"
+    "SensorGyroAccel", "SensorTHM"
+  };
+  return map[sProfile];
 }
 
-struct SensorPayload{
-    public:
-        SensorPayload(): sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), deviceType(DEVICE_TYPE),
-            batteryPercentage(BATTERY_INITIAL_READING){
-        }
+struct SensorPayload {
+  public:
+    SensorPayload(): sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), deviceType(DEVICE_TYPE),
+      batteryPercentage(BATTERY_INITIAL_READING) {
+    }
 
-        uint8_t sensorProfile;
-        uint8_t hwRev;
-        uint8_t fwRev;
-        uint8_t deviceType;
-        uint8_t batteryPercentage;
+    uint8_t sensorProfile;
+    uint8_t hwRev;
+    uint8_t fwRev;
+    uint8_t deviceType;
+    uint8_t batteryPercentage;
 } __attribute__ ((packed));
 
 //Inherit properties of Sensor payload in other Sensor structure accoarding to Sensor Profile
 
-struct SensorPayloadT : public SensorPayload{
-    SensorPayloadT(): temp(INVALID_TEMP_READING) {
-            sensorProfile = SensorProfile::SensorTemp;
-        }
+struct SensorPayloadT : public SensorPayload {
+  SensorPayloadT(): temp(INVALID_TEMP_READING) {
+    sensorProfile = SensorProfile::SensorTemp;
+  }
 
-    float temp;
+  float temp;
 } __attribute__ ((packed));
 
-struct SensorPayloadTH : public SensorPayloadT{
-    SensorPayloadTH(): humidity(INVALID_HUMIDITY_READING) {
-            sensorProfile=SensorProfile::SensorTH;
-        }
+struct SensorPayloadTH : public SensorPayloadT {
+  SensorPayloadTH(): humidity(INVALID_HUMIDITY_READING) {
+    sensorProfile = SensorProfile::SensorTH;
+  }
 
-    float humidity;
+  float humidity;
 } __attribute__ ((packed));
 
-struct SensorPayloadTHM : public SensorPayloadTH{
-    SensorPayloadTHM(): moisture(INVALID_MOISTURE_READING) {
-            sensorProfile=SensorProfile::SensorTHM;
-        }
+struct SensorPayloadTHM : public SensorPayloadTH {
+  SensorPayloadTHM(): moisture(INVALID_MOISTURE_READING) {
+    sensorProfile = SensorProfile::SensorTHM;
+  }
 
-    float moisture;
+  float moisture;
 } __attribute__ ((packed));
 
-struct SensorPayloadGas : public SensorPayload{
-    SensorPayloadGas(): gas(INVALID_GAS_READING) {
-            sensorProfile=SensorProfile::SensorGas;
-        }
+struct SensorPayloadGas : public SensorPayload {
+  SensorPayloadGas(): gas(INVALID_GAS_READING) {
+    sensorProfile = SensorProfile::SensorGas;
+  }
 
-    uint16_t gas;
+  uint16_t gas;
 } __attribute__ ((packed));
 
-struct SensorPayloadGyroAccel : public SensorPayload{
-    SensorPayloadGyroAccel(): gyro(INVALID_GYRO_READING), accel(INVALID_ACCEL_READING) {
-            sensorProfile=SensorProfile::SensorTH;
-        }
+struct SensorPayloadGyroAccel : public SensorPayload {
+  SensorPayloadGyroAccel(): gyro(INVALID_GYRO_READING), accel(INVALID_ACCEL_READING) {
+    sensorProfile = SensorProfile::SensorTH;
+  }
 
-    int16_t gyro;
-    int16_t accel;
+  int16_t gyro;
+  int16_t accel;
 } __attribute__ ((packed));
 
 SensorPayload           sensorPayload;

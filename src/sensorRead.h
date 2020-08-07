@@ -57,7 +57,7 @@ bool readDSB112()
 {
   tempSensor.requestTemperatures();
   float temp = tempSensor.getTempCByIndex(0);
-  if (isnan(temp) || (int)temp<-50) {
+  if (isnan(temp) || (int)temp < -50) {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
     return false;
   }
@@ -88,7 +88,7 @@ bool readSHT()
   }
   RSTATE.temperature = temp + PSTATE.tempCalibration;
   RSTATE.humidity = humid;
-  
+
   return true;
 }
 

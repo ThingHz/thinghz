@@ -166,7 +166,7 @@ const char HTTP_FORM_SET_RANGE_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><h
           </select><br><br>
 		  <INPUT type="submit" > <style>input[type="submit"]{background-color: #3498DB;border: none;color: white;padding:10px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;}</style></div>
       </div>
-      </FORM>  )rawliteral";   
+      </FORM>  )rawliteral";
 
 const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
     <style>body{ background-color: #0067B3  ; font-family: Arial, Helvetica, Sans-Serif }</style>
@@ -210,48 +210,48 @@ class ESPCaptivePortal
     ESPCaptivePortal(DeviceState& devState) {
     }
 
-/**
- * @brief:
- * begins the Async WebServer 
-*/
-    void beginServer(){
+    /**
+       @brief:
+       begins the Async WebServer
+    */
+    void beginServer() {
       DEBUG_PRINTLN("Starting the captive portal. You can configure ESp32 values using portal");
       server.begin();
     }
 
-/**
- * @brief:
- * Kills the Async WebServer 
-*/
-    void endPortal(){
-       DEBUG_PRINTLN("Ending the captive portal");
-       server.reset();
-     }
+    /**
+       @brief:
+       Kills the Async WebServer
+    */
+    void endPortal() {
+      DEBUG_PRINTLN("Ending the captive portal");
+      server.reset();
+    }
 
-/**
- * @brief:
- * Serves the portal 
- * @param:
- * AP active flag
-*/    
+    /**
+       @brief:
+       Serves the portal
+       @param:
+       AP active flag
+    */
     void servePortal ( bool isAPActive ) {
-      
-      server.on("/cred",HTTP_GET,[](AsyncWebServerRequest *request){
+
+      server.on("/cred", HTTP_GET, [](AsyncWebServerRequest * request) {
         if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass")) {
-            DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
-            PSTATE.apSSID = request->getParam("ssid")->value();
-            DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
-            PSTATE.apPass = request->getParam("pass")->value();
-            DEBUG_PRINTF("Pass Stored %s\t\n",PSTATE.apPass.c_str());
-            snprintf(credResponsePayload,RESPONSE_LENGTH,"{\"apSSID\":%s,\"apPass\":%s}",(PSTATE.apSSID).c_str(),(PSTATE.apPass).c_str());
-            request->send(200, "application/json", credResponsePayload);
+          DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
+          PSTATE.apSSID = request->getParam("ssid")->value();
+          DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
+          PSTATE.apPass = request->getParam("pass")->value();
+          DEBUG_PRINTF("Pass Stored %s\t\n", PSTATE.apPass.c_str());
+          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str());
+          request->send(200, "application/json", credResponsePayload);
         } else {
-            request->send_P(200,"text/html",HTTP_FORM_WIFISET);
+          request->send_P(200, "text/html", HTTP_FORM_WIFISET);
         }
       });
 
-      server.on("/alarm",HTTP_GET,[](AsyncWebServerRequest *request){
-      if (request->params() > 0 && request->hasParam("tMin") && request->hasParam("tMax") && request->hasParam("hMin") && request->hasParam("hMax")){
+      server.on("/alarm", HTTP_GET, [](AsyncWebServerRequest * request) {
+        if (request->params() > 0 && request->hasParam("tMin") && request->hasParam("tMax") && request->hasParam("hMin") && request->hasParam("hMax")) {
           PSTATE.targetTempMin = (request->getParam("tMin")->value()).toInt();
           DEBUG_PRINTF("targetTempMin %d\t\n", PSTATE.targetTempMin);
           PSTATE.targetTempMax = (request->getParam("tMax")->value()).toInt();
@@ -260,39 +260,39 @@ class ESPCaptivePortal
           DEBUG_PRINTF("targetHumidMin %d\t\n", PSTATE.targetHumidityMin);
           PSTATE.targetHumidityMax = (request->getParam("hMax")->value()).toInt();
           DEBUG_PRINTF("targetHumidMax %d\t\n", PSTATE.targetHumidityMax);
-          snprintf(correcResponsePayload,RESPONSE_LENGTH,"{\"targetTempMin\":%d,\"targetTempMax\":%d,\"targetHumidMin\":%d,\"targetHumidMax\":%d}",
-                  PSTATE.targetTempMin,
-                  PSTATE.targetTempMax,
-                  PSTATE.targetHumidityMin,
-                  PSTATE.targetHumidityMax);
-         request->send(200, "application/json", correcResponsePayload);
-      } else {
-          request->send_P(200,"text/html",HTTP_FORM_SET_RANGE_FACTOR);
+          snprintf(correcResponsePayload, RESPONSE_LENGTH, "{\"targetTempMin\":%d,\"targetTempMax\":%d,\"targetHumidMin\":%d,\"targetHumidMax\":%d}",
+                   PSTATE.targetTempMin,
+                   PSTATE.targetTempMax,
+                   PSTATE.targetHumidityMin,
+                   PSTATE.targetHumidityMax);
+          request->send(200, "application/json", correcResponsePayload);
+        } else {
+          request->send_P(200, "text/html", HTTP_FORM_SET_RANGE_FACTOR);
         }
       });
 
-      server.on("/call",HTTP_GET,[](AsyncWebServerRequest *request){
-      if (request->params() > 0 && request->hasParam("tCall")){
+      server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
+        if (request->params() > 0 && request->hasParam("tCall")) {
           PSTATE.tempCalibration = (request->getParam("tCall")->value()).toInt();
           DEBUG_PRINTF("tempCalibration %d\t\n", PSTATE.tempCalibration);
-          snprintf(callResponsePayload,RESPONSE_LENGTH,"{\"tempCalibration\":%d}",PSTATE.tempCalibration);
-         request->send(200, "application/json", callResponsePayload);
-      } else {
-          request->send_P(200,"text/html",HTTP_FORM_SET_CALLIBRATION_FACTOR);
+          snprintf(callResponsePayload, RESPONSE_LENGTH, "{\"tempCalibration\":%d}", PSTATE.tempCalibration);
+          request->send(200, "application/json", callResponsePayload);
+        } else {
+          request->send_P(200, "text/html", HTTP_FORM_SET_CALLIBRATION_FACTOR);
         }
       });
-      
-      server.onNotFound(_handleNotFound);
-      yield(); 
-   }
 
-/**
- * @brief:
- * Helper funtion for unexpected error 
- * @param:
- * AsyncWebServerRequest
-*/
-   static void _handleNotFound(AsyncWebServerRequest *request)
+      server.onNotFound(_handleNotFound);
+      yield();
+    }
+
+    /**
+       @brief:
+       Helper funtion for unexpected error
+       @param:
+       AsyncWebServerRequest
+    */
+    static void _handleNotFound(AsyncWebServerRequest *request)
     {
       String message = "File Not Found\n\n";
       request->send(404, "text/plain", message);
