@@ -92,6 +92,7 @@ String formApSsidName(String deviceId){
 #define MAX_TARGET_HUMID              60
 #define MAX_WAKEUP_COUNT              3
 #define MIN_WAKEUP_COUNT              0
+#define CALIBRATION_LEVEL             0
 
 
 #ifdef DEBUG_SERIAL

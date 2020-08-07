@@ -69,6 +69,11 @@ class PersistantState {
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT), 
                         apPass(WAN_WIFI_PASS_DEFAULT),
                         deviceId(DEVICE_ID_DEFAULT),
+                        targetTempMin(MIN_TARGET_TEMP),
+                        targetHumidityMin(MIN_TARGET_HUMID),                               
+                        targetTempMax(MAX_TARGET_TEMP), 
+                        targetHumidityMax(MAX_TARGET_HUMID),
+                        tempCalibration(CALIBRATION_LEVEL),
                         isOtaAvailable(0), 
                         newfWVersion(0)
                         {
@@ -81,17 +86,23 @@ class PersistantState {
       return ((apSSID == rhs.apSSID) &&
               (apPass == rhs.apPass) &&
               (deviceId == rhs.deviceId) &&
-              (targetTemp == rhs.targetTemp) &&
-              (targetHumidity == rhs.targetHumidity) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
-              (newfWVersion == rhs.newfWVersion) );
+              (newfWVersion == rhs.newfWVersion)&&
+              (targetTempMin == rhs.targetTempMin)&&
+              (targetHumidityMin == rhs.targetHumidityMin)&&
+              (targetTempMax == rhs.targetTempMax)&&
+              (targetHumidityMax == rhs.targetHumidityMax)&&
+              (tempCalibration == rhs.tempCalibration));
     }
     // public data members
     String apSSID;
     String apPass;
     String deviceId;
-    float targetTemp;
-    float targetHumidity;
+    int targetTempMin;
+    int targetHumidityMin;                               
+    int targetTempMax; 
+    int targetHumidityMax;
+    int tempCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
 };
@@ -111,9 +122,11 @@ struct PersistantStateStorageFormat {
     char version[8];
     char apSSID[30];
     char apPass[30];
-    char deviceId[30];
-    float setTemp;
-    float setHumid;
+    int setTempMin;
+    int setHumidityMin;                               
+    int setTempMax; 
+    int setHumidityMax;
+    int tempCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
 } __attribute__ ((packed));
@@ -122,9 +135,11 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
 {
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
-  deviceId = String();
-  targetTemp = persistantStore.setTemp;
-  targetHumidity = persistantStore.setHumid;
+  targetTempMin = persistantStore.setTempMin ;
+  targetHumidityMin = persistantStore.setHumidityMin;                               
+  targetTempMax = persistantStore.setTempMax; 
+  targetHumidityMax = persistantStore.setHumidityMax;
+  tempCalibration = persistantStore.tempCalibration;
   isOtaAvailable = persistantStore.isOtaAvailable;
   newfWVersion = persistantStore.newfWVersion;
 }
@@ -134,8 +149,11 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   strcpy(version, EEPROM_STORAGE_FORMAT_VERSION);
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
-  setTemp = persistantState.targetTemp;
-  setHumid = persistantState.targetHumidity;
+  setTempMin = persistantState.targetTempMin;
+  setHumidityMin = persistantState.targetHumidityMin;
+  setTempMax = persistantState.targetTempMax;
+  setHumidityMax = persistantState.targetHumidityMax;
+  tempCalibration = persistantState.tempCalibration;
   isOtaAvailable = persistantState.isOtaAvailable;
   newfWVersion = persistantState.newfWVersion;
 }
@@ -147,10 +165,7 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
  * We need to switch from EEPROM to RTC
 */
 typedef struct{
-    int targetTempMin;
-    int targetHumidityMin;                               
-    int targetTempMax; 
-    int targetHumidityMax;                     
+    int isEscalation;                  
     int wakeUpCount;
 }RTCState; 
 RTC_DATA_ATTR RTCState rtcState;

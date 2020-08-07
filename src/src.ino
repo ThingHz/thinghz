@@ -43,7 +43,6 @@ void setup() {
     captivePortal.servePortal(true);
     captivePortal.beginServer();
     delay(100);
-    rtcState.wakeUpCount++;
   }
   
   if (!RSTATE.isPortalActive) {
@@ -86,8 +85,7 @@ void setup() {
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
-  }
-  
+  } 
 }
 
 
@@ -121,12 +119,13 @@ bool checkAlarm(uint8_t sProfile) {
       isAlarm = true;
       break;
     case SensorProfile::SensorTemp : {
-        if (((int)RSTATE.temperature < rtcState.targetTempMax &&
-             (int)RSTATE.temperature > rtcState.targetTempMin) &&
+        if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
+             (int)RSTATE.temperature > PSTATE.targetTempMin) &&
             rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
             DEBUG_PRINTLN("Value is in range going to sleep");
             DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
             rtcState.wakeUpCount++;
+            rtcState.isEscalation = 0;
             isAlarm = false;
         } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
           DEBUG_PRINTLN("has Reached max offline cout now log data");
@@ -134,20 +133,23 @@ bool checkAlarm(uint8_t sProfile) {
           isAlarm = true;
         }else {
             DEBUG_PRINTLN("Values not in range going to sleep");
+            rtcState.isEscalation++;
+            rtcState.wakeUpCount = 0;
             isAlarm = true;
           }
       }
       break;
     case SensorProfile::SensorTH : {
         DEBUG_PRINTLN(rtcState.wakeUpCount);
-        DEBUG_PRINTLN(rtcState.targetTempMax);
-        DEBUG_PRINTLN(rtcState.targetTempMin);
-        if ((((int)RSTATE.temperature < rtcState.targetTempMax &&
-              (int)RSTATE.temperature > rtcState.targetTempMin)) &&
+        DEBUG_PRINTLN(PSTATE.targetTempMax);
+        DEBUG_PRINTLN(PSTATE.targetTempMin);
+        if ((((int)RSTATE.temperature < PSTATE.targetTempMax &&
+              (int)RSTATE.temperature > PSTATE.targetTempMin)) &&
             (rtcState.wakeUpCount < MAX_WAKEUP_COUNT)) {
           DEBUG_PRINTLN("Value is in range going to sleep");
           DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
           rtcState.wakeUpCount++;
+          rtcState.isEscalation = 0;
           isAlarm = false;
         } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
           DEBUG_PRINTLN("has Reached max offline cout now log data");
@@ -157,22 +159,29 @@ bool checkAlarm(uint8_t sProfile) {
             DEBUG_PRINTLN("Values not in range going to sleep");
             isAlarm = true;
             rtcState.wakeUpCount = 0;
+            rtcState.isEscalation++;
           }
       }
       break;
     default:
-      if (((int)RSTATE.temperature < rtcState.targetTempMax &&
-           (int)RSTATE.temperature > rtcState.targetTempMin) &&
+      if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
+           (int)RSTATE.temperature > PSTATE.targetTempMin) &&
           rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
         DEBUG_PRINTLN("Value is in range going to sleep");
         DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
         rtcState.wakeUpCount++;
+        rtcState.isEscalation = 0;
         isAlarm = false;
       } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
         DEBUG_PRINTLN("has Reached max offline cout now log data");
         rtcState.wakeUpCount = 0;
         isAlarm = true;
-      }
+      } else {
+            DEBUG_PRINTLN("Values not in range going to sleep");
+            isAlarm = true;
+            rtcState.wakeUpCount = 0;
+            rtcState.isEscalation++;
+          }
       break;
   }
 
@@ -204,7 +213,7 @@ float readBatValue()
 {
   //formula for VD1 = 1M/(3.9M+1M)
   int adcVal = analogRead(BATTERY_VOL_PIN);
-  float batVol = adcVal * 0.001196; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
+  float batVol = adcVal * 0.004923; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
   DEBUG_PRINTF("adcVal %d\n",adcVal);
   DEBUG_PRINTF("batteryVoltage %.1f\n",batVol);
   return batVol;

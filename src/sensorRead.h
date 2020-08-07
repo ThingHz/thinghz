@@ -86,7 +86,7 @@ bool readSHT()
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  RSTATE.temperature = temp;
+  RSTATE.temperature = temp + PSTATE.tempCalibration;
   RSTATE.humidity = humid;
   
   return true;
