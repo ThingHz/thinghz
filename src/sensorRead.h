@@ -2,7 +2,7 @@
 #define SENSOR_READ_H
 
 #include "Adafruit_SHT31.h"
-#include "devicestate.h"
+#include "deviceState.h"
 #include <OneWire.h>
 #include "SensorPayload.h"
 #include <DallasTemperature.h>

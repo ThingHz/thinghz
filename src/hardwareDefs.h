@@ -53,6 +53,8 @@ String formApSsidName(String deviceId) {
 // firmware rev
 #define FW_REV                          20
 
+//missied Data point spiff file
+#define MISS_POINT_STORE_FILE_NAME      "/missDataPoint.txt"
 
 // wiring configuration
 #define TEMP_SENSOR_PIN     32

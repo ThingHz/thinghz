@@ -4,6 +4,7 @@
 #include "deviceState.h"
 #include "hardwareDefs.h"
 #include "SensorPayload.h"
+#include <SPIFFS.h>
 
 // return battery voltage in "V" units
 
@@ -110,6 +111,48 @@ String prepareRemoteFWFileName(uint8_t devType, uint8_t hwRev, uint8_t newFwRev)
   snprintf(retString, sizeof(retString), "%d-%d-%d.bin", devType, hwRev, newFwRev);
   return String(retString);
 }
+
+bool isFileExistInSpiff(String fileName){
+    if (SPIFFS.exists(fileName.c_str())) {
+        return true;
+    }
+    return false;
+}
+
+bool storeDataInSpiff(){
+  
+  String payload  = createPayload(SensorTH);
+  if(!isFileExistInSpiff(MISS_POINT_STORE_FILE_NAME)){
+        File f = SPIFFS.open(MISS_POINT_STORE_FILE_NAME, FILE_WRITE);
+        if (!f) {
+            DEBUG_PRINT("error creating file");
+            return false;
+        }
+        size_t fileSize = f.write((uint8_t*)payload);
+        if (fileSize==0) {
+            DEBUG_PRINT("Incorrect fileSize written");
+            f.close();
+            return false;
+        }
+        f.close();
+        return true;
+    }
+    
+    File f = SPIFFS.open(MISS_POINT_STORE_FILE_NAME, FILE_APPEND);
+    if (!f) {
+        DEBUG_PRINT("error appending file");
+        return false;
+    }
+    size_t fileSize = f.write((uint8_t*)payload);
+    if (fileSize == 0) {
+        DEBUG_PRINT("Incorrect fileSize written");
+        f.close();
+        return false;
+    }
+    f.close();
+    return true;
+}
+
 
 
 #endif

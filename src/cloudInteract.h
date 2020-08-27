@@ -5,14 +5,12 @@
 #include "ArduinoJson.h"
 #include <SPIFFS.h>
 #include "wifiOTA.h"
-#include "devicestate.h"
+#include "deviceState.h"
 #include "hardwaredefs.h"
 #include "utils.h"
 #include "SensorPayload.h"
 
 DynamicJsonDocument jsonDocument(1024);
-#define JSON_MSG_MAX_LEN                        512
-
 
 
 const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data";
@@ -47,6 +45,11 @@ class CloudTalk {
       HTTPClient http;
       http.begin(urlmessageSend);//zx     //test
       http.addHeader("Content-Type" , "application/json");  //Specify content-type header
+      if (rtcState.missedDataPoint>0) {
+          if (!sendMissedPayload()){
+              DEBUG_PRINT("Error Sending missed payload");
+          }
+      }
       String messagePayload = createPayload(DEVICE_SENSOR_TYPE);
       DEBUG_PRINTLN(messagePayload);
       httpCode = http.POST(messagePayload);     //Send the request
@@ -82,76 +85,39 @@ class CloudTalk {
       return true;
     }
 
-    /**
-       @brief: Create message payload
-       @param: Sensor profile of sesnor type
-       @return: message payload array
-    */
-
-    String createPayload(uint8_t sProfile) {
-      char messageCreatePayload[JSON_MSG_MAX_LEN];
-      switch (sProfile) {
-        case SensorProfile::SensorNone :
-          DEBUG_PRINTLN("NO Sensor Found");
-          break;
-        case SensorProfile::SensorTemp :
-          PAYLOAD_T.temp = RSTATE.temperature;
-          DEBUG_PRINTLN("Creating payload for Temp Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
-                   PAYLOAD_T.temp,
-                   RSTATE.humidity,
-                   PAYLOAD_TH.sensorProfile,
-                   RSTATE.batteryPercentage
-                  );
-          DEBUG_PRINTLN(messageCreatePayload);
-          break;
-        case SensorProfile::SensorTH :
-          PAYLOAD_TH.temp = RSTATE.temperature;
-          PAYLOAD_TH.humidity = RSTATE.humidity;
-          DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
-                   PAYLOAD_TH.temp,
-                   PAYLOAD_TH.humidity,
-                   PAYLOAD_TH.sensorProfile,
-                   RSTATE.batteryPercentage
-                  );
-          break;
-        case SensorProfile::SensorTHM :
-          DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                   (RSTATE.macAddr).c_str(),
-                   PAYLOAD_THM.temp,
-                   PAYLOAD_THM.humidity,
-                   PAYLOAD_THM.moisture,
-                   RSTATE.batteryPercentage,
-                   PAYLOAD_TH.sensorProfile);
-
-          break;
-        case SensorProfile::SensorGas :
-          DEBUG_PRINTLN("Creating payload for Gas Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"gas\":\"%u\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                   (RSTATE.macAddr).c_str(),
-                   PAYLOAD_GAS.gas,
-                   RSTATE.batteryPercentage,
-                   PAYLOAD_GAS.sensorProfile);
-          break;
-        case SensorProfile::SensorGyroAccel :
-          DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"gyro\":\"%d\",\"accel\":\"%d\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-                   (RSTATE.macAddr).c_str(),
-                   PAYLOAD_GA.gyro,
-                   PAYLOAD_GA.accel,
-                   RSTATE.batteryPercentage,
-                   PAYLOAD_TH.sensorProfile);
-          break;
-        default:
-          DEBUG_PRINTLN("Not a valid Sensor");
-          break;
-      }
-      return String(messageCreatePayload);
-    }
-
-
+  bool sendMissedPayload(){
+       String missedMessagePayload;
+          if (!SPIFFS.begin(true)) {
+              DEBUG_PRINTLN("An Error has occurred while mounting SPIFFS, fw upgrades will not work");
+              return false;
+          } else {
+            DEBUG_PRINTLN("sucessfully mouted spiffs");
+          }
+          HTTPClient httpMiss;
+          httpMiss.begin(urlmessageSend);//zx     //test
+          httpMiss.addHeader("Content-Type" , "application/json");  //Specify content-type header
+          File file = SPIFFS.open(MISS_POINT_STORE_FILE_NAME,"r");
+          if (!file) {
+              DEBUG_PRINT("failed to open file for reading");
+              return false;
+          }
+          if (!file.read(missedMessagePayload.c_str())){
+              DEBUG_PRINT("Failed to read the file");
+              return false;
+          }
+          int httpCode = httpMiss.POST(missedMessagePayload);
+          yield();
+          if (httpCode == HTTP_CODE_OK && httpCode > 0) {
+              //Get the response payload
+              DEBUG_PRINTLN(httpMiss.getString());
+              } else {
+                    DEBUG_PRINTF("[HTTP] GET... failed, error: %s and code is %d\n", httpMiss.errorToString(httpCode).c_str(), httpCode);
+                    httpMiss.end();
+                    return false;
+        }
+        httpMiss.end();
+        return true;
+  }
     /**
        @brief: update the ota version during successful update
        @return: true if everything happened as expected

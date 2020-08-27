@@ -166,6 +166,7 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
 */
 typedef struct {
   int isEscalation;
+  int missedDataPoint;
   int wakeUpCount;
 } RTCState;
 RTC_DATA_ATTR RTCState rtcState;

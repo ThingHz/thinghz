@@ -19,7 +19,7 @@ CloudTalk cloudTalk;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  DEBUG_PRINTLN("Started ThingHz Wireless Temperature Sensor");
+
 
   if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
     DEBUG_PRINTLN("Problem loading EEPROM");
@@ -79,13 +79,17 @@ void setup() {
     }
   }
 
-  digitalWrite(VOLTAGE_DIV_PIN, LOW);
 
-  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+    rtcState.missedDataPoint++;
+    storeDataInSpiff();
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
   }
+
+  digitalWrite(VOLTAGE_DIV_PIN, LOW);
+
+  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
 }
 
 
@@ -96,12 +100,12 @@ void loop() {
       DEBUG_PRINTLN("Error connecting to WiFi");
       goToDeepSleep();
     }
-    if (!cloudTalk.sendPayload()) {
-      DEBUG_PRINTLN("Error Sending Payload");
+    if (cloudTalk.sendPayload()) {
+       digitalWrite(SIG_PIN, HIGH);
+       delay(500);
+       digitalWrite(SIG_PIN, LOW);
     }
-    digitalWrite(SIG_PIN, HIGH);
-    delay(500);
-    digitalWrite(SIG_PIN, LOW);
+   
     DEBUG_PRINTLN("Going to sleep");
     goToDeepSleep();
   }
@@ -189,7 +193,7 @@ bool checkAlarm(uint8_t sProfile) {
 }
 
 void goToDeepSleep() {
-  DEBUG_PRINTLN("going to sleep");
+  
   bool rc = deviceState.store();
   if (!rc) {
     DEBUG_PRINTLN("EEPROM Values not loaded");
@@ -199,6 +203,7 @@ void goToDeepSleep() {
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   digitalWrite(VOLTAGE_DIV_PIN, HIGH);
+  DEBUG_PRINTLN("going to sleep");
   btStop();
   //esp_wifi_stop();
   esp_bt_controller_disable();
