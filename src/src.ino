@@ -82,7 +82,6 @@ void setup() {
 
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
     rtcState.missedDataPoint++;
-    storeDataInSpiff();
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
   }

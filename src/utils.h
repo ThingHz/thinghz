@@ -119,40 +119,4 @@ bool isFileExistInSpiff(String fileName){
     return false;
 }
 
-bool storeDataInSpiff(){
-  
-  String payload  = createPayload(SensorTH);
-  if(!isFileExistInSpiff(MISS_POINT_STORE_FILE_NAME)){
-        File f = SPIFFS.open(MISS_POINT_STORE_FILE_NAME, FILE_WRITE);
-        if (!f) {
-            DEBUG_PRINT("error creating file");
-            return false;
-        }
-        size_t fileSize = f.write((uint8_t*)payload);
-        if (fileSize==0) {
-            DEBUG_PRINT("Incorrect fileSize written");
-            f.close();
-            return false;
-        }
-        f.close();
-        return true;
-    }
-    
-    File f = SPIFFS.open(MISS_POINT_STORE_FILE_NAME, FILE_APPEND);
-    if (!f) {
-        DEBUG_PRINT("error appending file");
-        return false;
-    }
-    size_t fileSize = f.write((uint8_t*)payload);
-    if (fileSize == 0) {
-        DEBUG_PRINT("Incorrect fileSize written");
-        f.close();
-        return false;
-    }
-    f.close();
-    return true;
-}
-
-
-
 #endif

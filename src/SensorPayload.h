@@ -3,7 +3,7 @@
 
 #include "hardwareDefs.h"
 #include "assert.h"
-#define JSON_MSG_MAX_LEN                        512
+#include "deviceState.h"
 
 
 enum SensorProfile {
@@ -90,75 +90,6 @@ SensorPayloadTHM        sensorPayloadTHM;
 SensorPayloadGas        sensorPayloadGas;
 
 
-
-
-/**
-    @brief: Create message payload
-    @param: Sensor profile of sesnor type
-    @return: message payload array
-*/
-
-String createPayload(uint8_t sProfile) {
-  char messageCreatePayload[JSON_MSG_MAX_LEN];
-  switch (sProfile) {
-    case SensorProfile::SensorNone :
-      DEBUG_PRINTLN("NO Sensor Found");
-      break;
-    case SensorProfile::SensorTemp :
-      sensorPayloadT.temp = RSTATE.temperature;
-      DEBUG_PRINTLN("Creating payload for Temp Sensor");
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"temp\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
-               sensorPayloadT.temp,
-               sensorPayloadT.sensorProfile,
-               RSTATE.batteryPercentage
-              );
-      DEBUG_PRINTLN(messageCreatePayload);
-      break;
-    case SensorProfile::SensorTH :
-      sensorPayloadTH.temp = RSTATE.temperature;
-      sensorPayloadTH.humidity = RSTATE.humidity;
-      DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"profile\": %d,\"battery\": \"%d\"}}",
-               sensorPayloadTH.temp,
-               sensorPayloadTH.humidity,
-               sensorPayloadTH.sensorProfile,
-               RSTATE.batteryPercentage
-              );
-      break;
-    case SensorProfile::SensorTHM :
-      DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"temperature\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-               (RSTATE.macAddr).c_str(),
-               sensorPayloadTHM.temp,
-               sensorPayloadTHM.humidity,
-               sensorPayloadTHM.moisture,
-               RSTATE.batteryPercentage,
-               sensorPayloadTHM.sensorProfile);
-
-      break;
-    case SensorProfile::SensorGas :
-      DEBUG_PRINTLN("Creating payload for Gas Sensor");
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"gas\":\"%u\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-               (RSTATE.macAddr).c_str(),
-               sensorPayloadGas.gas,
-               RSTATE.batteryPercentage,
-               sensorPayloadGas.sensorProfile);
-      break;
-    case SensorProfile::SensorGyroAccel :
-      DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"deviceId\":\"%s\",\"gyro\":\"%d\",\"accel\":\"%d\",\"batteryPercentage\":\"%d\",\"sensorProfile\":%d}",
-               (RSTATE.macAddr).c_str(),
-               sensorPayloadGyroAccel.gyro,
-               sensorPayloadGyroAccel.accel,
-               RSTATE.batteryPercentage,
-               sensorPayloadGyroAccel.sensorProfile);
-      break;
-    default:
-      DEBUG_PRINTLN("Not a valid Sensor");
-      break;
-  }
-  return String(messageCreatePayload);
-}
 
 #define PAYLOAD_NONE   sensorPayload
 #define PAYLOAD_T      sensorPayloadT
