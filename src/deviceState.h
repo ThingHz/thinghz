@@ -121,6 +121,7 @@ struct PersistantStateStorageFormat {
     PersistantStateStorageFormat(const PersistantState &persistantState);
     char version[8];
     char apSSID[30];
+    char deviceId[30];
     char apPass[30];
     int setTempMin;
     int setHumidityMin;
@@ -135,6 +136,7 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
 {
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
+  deviceId = String(persistantStore.deviceId);
   targetTempMin = persistantStore.setTempMin ;
   targetHumidityMin = persistantStore.setHumidityMin;
   targetTempMax = persistantStore.setTempMax;
@@ -149,6 +151,7 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   strcpy(version, EEPROM_STORAGE_FORMAT_VERSION);
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
+  strcpy(deviceId, persistantState.deviceId.c_str());
   setTempMin = persistantState.targetTempMin;
   setHumidityMin = persistantState.targetHumidityMin;
   setTempMax = persistantState.targetTempMax;

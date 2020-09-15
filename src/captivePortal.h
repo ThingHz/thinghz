@@ -31,7 +31,8 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 	<FORM action="/cred" method= "get">
 		<P><label style="font-family:Times New Roman">WiFi SSID</label><br><input maxlength="30px" type = "text" name="ssid" id="ssid" placeholder= "SSID" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;>
 		<br><label style="font-family:Times New Roman">WiFi Password</label><br><input maxlength="30px" type = "text" name="pass" id="pass" placeholder= "Password" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;><br>
-		</P>
+		<br><label style="font-family:Times New Roman">Device ID</label><br><input maxlength="30px" type = "text" name="device" id="device" placeholder= "deviceId" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;><br>
+    </P>
 		<INPUT type="submit"><style>input[type="submit"]{background-color: #3498DB; border: none;color: white;padding:15px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;}</style><br><br>
 	</FORM>
 </center></body></html>
@@ -48,31 +49,6 @@ const char HTTP_FORM_SET_RANGE_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><h
           <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
 		  <select name="tMax" id="tMax_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
             
-            <option value="45">45&#8451 </option>
-            <option value="44">44&#8451 </option>
-            <option value="43">43&#8451 </option>
-            <option value="42">42&#8451 </option>
-            <option value="41">41&#8451 </option>
-            <option value="40">40&#8451 </option>
-            <option value="39">39&#8451 </option>
-            <option value="38">38&#8451 </option>
-            <option value="37">37&#8451 </option>
-            <option value="36">36&#8451 </option>
-            <option value="35">35&#8451 </option>
-            <option value="34">34&#8451 </option>
-            <option value="33">33&#8451 </option>
-            <option value="32">32&#8451 </option>
-            <option value="31">31&#8451 </option>
-            <option value="30">30&#8451 </option>
-            <option value="29">29&#8451 </option>
-            <option value="28">28&#8451 </option>
-            <option value="27">27&#8451 </option>
-            <option value="26">26&#8451 </option>
-            <option value="25">25&#8451 </option>
-            <option value="24">24&#8451 </option>
-            <option value="23">23&#8451 </option>
-            <option value="22">22&#8451 </option>
-            <option value="21">21&#8451 </option>
             <option value="20">20&#8451 </option>
             <option value="19">19&#8451 </option>
             <option value="18">18&#8451 </option>
@@ -93,14 +69,10 @@ const char HTTP_FORM_SET_RANGE_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><h
             <option value="3">3&#8451 </option>
             <option value="2">2&#8451 </option>
             <option value="1">1&#8451 </option>
+            <option value="0">0&#8451 </option>
           </select>&nbsp&nbsp&nbsp&nbsp 
 		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">min</label>&nbsp&nbsp&nbsp&nbsp
 		  <select name="tMin" id="tMin_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
-            <option value="20">20&#8451 </option>
-            <option value="19">19&#8451 </option>
-            <option value="18">18&#8451 </option>
-            <option value="17">17&#8451 </option>
-            <option value="16">16&#8451 </option>
             <option value="15">15&#8451 </option>
 			      <option value="14">14&#8451 </option>
             <option value="13">13&#8451 </option>
@@ -116,6 +88,27 @@ const char HTTP_FORM_SET_RANGE_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><h
             <option value="3">3&#8451 </option>
             <option value="2">2&#8451 </option>
             <option value="1">1&#8451 </option>
+            <option value="0">0&#8451 </option>
+            <option value="-1">-1&#8451 </option>
+            <option value="-2">-2&#8451 </option>
+            <option value="-3">-3&#8451 </option>
+            <option value="-4">-4&#8451 </option>
+            <option value="-5">-5&#8451 </option>
+			      <option value="-6">-6&#8451 </option>
+            <option value="-7">-7&#8451 </option>
+            <option value="-8">-8&#8451 </option>
+            <option value="-9">-9&#8451 </option>
+            <option value="-10">-10&#8451 </option>
+            <option value="-1">-11&#8451 </option>
+            <option value="-2">-12&#8451 </option>
+            <option value="-3">-13&#8451 </option>
+            <option value="-4">-14&#8451 </option>
+            <option value="-5">-15&#8451 </option>
+			      <option value="-6">-16&#8451 </option>
+            <option value="-7">-17&#8451 </option>
+            <option value="-18">-18&#8451 </option>
+            <option value="-19">-19&#8451 </option>
+            <option value="-20">-20&#8451 </option>
           </select><br><br><br>
           <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Acceptable Humidity Range</label><br><br>
 		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
@@ -238,12 +231,13 @@ class ESPCaptivePortal
 
       server.on("/cred", HTTP_GET, [](AsyncWebServerRequest * request) {
         if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass")) {
+          PSTATE.deviceId = request->getParam("device")->value();
           DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
           PSTATE.apSSID = request->getParam("ssid")->value();
           DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
           PSTATE.apPass = request->getParam("pass")->value();
           DEBUG_PRINTF("Pass Stored %s\t\n", PSTATE.apPass.c_str());
-          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str());
+          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"deviceId\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(),(PSTATE.deviceId).c_str());
           request->send(200, "application/json", credResponsePayload);
         } else {
           request->send_P(200, "text/html", HTTP_FORM_WIFISET);

@@ -217,7 +217,7 @@ float readBatValue()
 {
   //formula for VD1 = 1M/(3.9M+1M)
   int adcVal = analogRead(BATTERY_VOL_PIN);
-  float batVol = adcVal * 0.004923; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
+  float batVol = adcVal * 0.00127; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
   DEBUG_PRINTF("adcVal %d\n", adcVal);
   DEBUG_PRINTF("batteryVoltage %.1f\n", batVol);
   return batVol;

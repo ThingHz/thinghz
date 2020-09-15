@@ -75,7 +75,7 @@ String formApSsidName(String deviceId) {
 
 #define WAN_WIFI_SSID_DEFAULT                    "Agnextsn_compass"
 #define WAN_WIFI_PASS_DEFAULT                    "Agnext0419"
-#define DEVICE_ID_DEFAULT                        "THINGHZSN0001"
+#define DEVICE_ID_DEFAULT                        "THING00001"
 
 
 #define BATTERY_INITIAL_READING    0
