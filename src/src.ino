@@ -67,14 +67,14 @@ void setup() {
   if (readSHT()) {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
     DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
-    if (!checkAlarm(DEVICE_SENSOR_TYPE) && !RSTATE.isPortalActive) {
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE)) {
       goToDeepSleep();
     }
   }
 
   if (readDSB112()) {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-    if (!checkAlarm(DEVICE_SENSOR_TYPE) && !RSTATE.isPortalActive) {
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE)) {
       goToDeepSleep();
     }
   }
@@ -159,7 +159,7 @@ bool checkAlarm(uint8_t sProfile) {
           rtcState.wakeUpCount = 0;
           isAlarm = true;
         } else {
-          DEBUG_PRINTLN("Values not in range going to sleep");
+          DEBUG_PRINTLN("Values not in range Log data");
           isAlarm = true;
           rtcState.wakeUpCount = 0;
           rtcState.isEscalation++;

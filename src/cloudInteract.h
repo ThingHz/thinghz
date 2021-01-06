@@ -97,7 +97,7 @@ class CloudTalk {
         case SensorProfile::SensorTemp :
           PAYLOAD_T.temp = RSTATE.temperature;
           DEBUG_PRINTLN("Creating payload for Temp Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}}",
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}",
                    (PSTATE.deviceId).c_str(),
                    PAYLOAD_T.temp,
                    PAYLOAD_T.sensorProfile,
@@ -109,7 +109,7 @@ class CloudTalk {
           PAYLOAD_TH.temp = RSTATE.temperature;
           PAYLOAD_TH.humidity = RSTATE.humidity;
           DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}}",
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}",
                    (PSTATE.deviceId).c_str(),
                    PAYLOAD_TH.temp,
                    PAYLOAD_TH.humidity,
@@ -119,7 +119,7 @@ class CloudTalk {
           break;
         case SensorProfile::SensorTHM :
           DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"device_id\":\"%s\",\"temp\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}}",
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
                    (PSTATE.deviceId).c_str(),
                    PAYLOAD_THM.temp,
                    PAYLOAD_THM.humidity,
@@ -130,7 +130,7 @@ class CloudTalk {
           break;
         case SensorProfile::SensorGas :
           DEBUG_PRINTLN("Creating payload for Gas Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"Item\":{\"device_id\":\"%s\",\"gas\":\"%u\",\"battery\":\"%d\",\"sensor_profile\":%d}}",
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"gas\":\"%u\",\"battery\":\"%d\",\"sensor_profile\":%d}",
                     (PSTATE.deviceId).c_str(),
                    PAYLOAD_GAS.gas,
                    RSTATE.batteryPercentage,
