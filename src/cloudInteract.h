@@ -30,7 +30,6 @@ class FWInfo {
   public:
     uint8_t fwVersion = 0;
     uint32_t fileSize = 0;
-    uint32_t crc = 0;
 };
 
 class CloudTalk {
@@ -69,7 +68,7 @@ class CloudTalk {
                                   HW_REV,
                                   fwInfo.fwVersion);
 
-        size_t filesize = fetchOTAFile(remoteFwFilename, fwInfo.fileSize, fwInfo.crc);
+        size_t filesize = fetchOTAFile(remoteFwFilename, fwInfo.fileSize);
 
 
         if (filesize) {
@@ -119,7 +118,7 @@ class CloudTalk {
           break;
         case SensorProfile::SensorTHM :
           DEBUG_PRINTLN("Creating payload for Temp Humid Moist Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\":\"%.1f\",\"humidity\":\"%.1f\",\"moisture\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"moisture\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
                    (PSTATE.deviceId).c_str(),
                    PAYLOAD_THM.temp,
                    PAYLOAD_THM.humidity,
@@ -144,6 +143,19 @@ class CloudTalk {
                    PAYLOAD_GA.accel,
                    RSTATE.batteryPercentage,
                    PAYLOAD_TH.sensorProfile);
+          break;
+        case SensorProfile::SensorTHC:
+           DEBUG_PRINTLN("Creating payload for Temp Humid Cap Sensor");
+           PAYLOAD_THC.temp = RSTATE.temperature;
+           PAYLOAD_THC.humidity = RSTATE.humidity;
+           PAYLOAD_THC.capcitance = RSTATE.capacitance;
+           snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"cap\":\"%.4f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
+                   (PSTATE.deviceId).c_str(),
+                   PAYLOAD_THC.temp,
+                   PAYLOAD_THC.humidity,
+                   PAYLOAD_THC.capcitance,
+                   RSTATE.batteryPercentage,
+                   PAYLOAD_THC.sensorProfile);
           break;
         default:
           DEBUG_PRINTLN("Not a valid Sensor");
@@ -241,17 +253,12 @@ class CloudTalk {
         fwInfo.fileSize = String(fwSize).toInt();
       }
 
-      if (innerDict.containsKey("firmwareCRC")) {
-        const char * fwCRC = innerDict["firmwareCRC"];
-        fwInfo.crc = String(fwCRC).toInt();
-      }
-
       DEBUG_PRINTF("FW Version Number from cloud response: %s\n", newFWVersion.c_str());
       return fwInfo;
     }
 
     // fetch ota file and store in spiffs
-    size_t fetchOTAFile(const String& remoteFileName, uint32_t expectedFileSize, uint32_t expectedCRC) const
+    size_t fetchOTAFile(const String& remoteFileName, uint32_t expectedFileSize) const
     {
       if (expectedFileSize == 0) {
         DEBUG_PRINTLN("expected file size is zero, not doing anything");

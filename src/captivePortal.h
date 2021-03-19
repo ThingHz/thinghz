@@ -48,7 +48,26 @@ const char HTTP_FORM_SET_RANGE_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><h
           <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Acceptable Temperature Range</label><br><br>
           <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
 		  <select name="tMax" id="tMax_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
-            
+            <option value="40">20&#8451 </option>
+            <option value="39">19&#8451 </option>
+            <option value="38">18&#8451 </option>
+            <option value="37">17&#8451 </option>
+            <option value="36">16&#8451 </option>
+            <option value="35">15&#8451 </option>
+			      <option value="34">14&#8451 </option>
+            <option value="33">13&#8451 </option>
+            <option value="32">12&#8451 </option>
+            <option value="31">11&#8451 </option> 
+            <option value="30">20&#8451 </option>
+            <option value="29">19&#8451 </option>
+            <option value="28">18&#8451 </option>
+            <option value="27">17&#8451 </option>
+            <option value="26">16&#8451 </option>
+            <option value="25">15&#8451 </option>
+			      <option value="24">14&#8451 </option>
+            <option value="23">13&#8451 </option>
+            <option value="22">12&#8451 </option>
+            <option value="21">11&#8451 </option> 
             <option value="20">20&#8451 </option>
             <option value="19">19&#8451 </option>
             <option value="18">18&#8451 </option>

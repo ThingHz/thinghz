@@ -7,9 +7,13 @@
 #include "SensorPayload.h"
 #include <DallasTemperature.h>
 
-OneWire           deviceTemp(TEMP_SENSOR_PIN);
+OneWire deviceTemp(TEMP_SENSOR_PIN);
 DallasTemperature tempSensor(&deviceTemp);
-Adafruit_SHT31    sht31(&Wire);
+Adafruit_SHT31 sht31(&Wire);
+
+
+int capdac = 0;
+char result[100];
 
 bool testBit(uint &bits, int bit)
 {
@@ -26,13 +30,15 @@ void clearBit(uint &bits, int bit)
   bits &= (~bit);
 }
 
-void DSB112Init() {
+void DSB112Init()
+{
   tempSensor.begin();
 }
 
 bool shtInit()
 {
-  if (! sht31.begin(0x44)) {   // Set to 0x45 for alternate i2c addr
+  if (!sht31.begin(0x44))
+  { // Set to 0x45 for alternate i2c addr
     DEBUG_PRINTLN("Couldn't find SHT31");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTDisconnected);
     return false;
@@ -57,7 +63,8 @@ bool readDSB112()
 {
   tempSensor.requestTemperatures();
   float temp = tempSensor.getTempCByIndex(0);
-  if (isnan(temp) || (int)temp < -50) {
+  if (isnan(temp) || (int)temp < -50)
+  {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
     return false;
   }
@@ -76,12 +83,14 @@ bool readSHT()
 
   // NOTE:: is it possible that only one value fails, is it possible to trust the other value in such a case.
   // NOTE:: is nan the only sensor failure scenario
-  if (isnan(temp)) {  // check if 'is not a number'
+  if (isnan(temp))
+  { // check if 'is not a number'
     DEBUG_PRINTLN("Failed to read temperature");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  if (isnan(humid)) {  // check if 'is not a number'
+  if (isnan(humid))
+  { // check if 'is not a number'
     DEBUG_PRINTLN("Failed to read humidity");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;

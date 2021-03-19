@@ -12,7 +12,8 @@ enum SensorProfile {
   SensorTH,
   SensorGas,
   SensorGyroAccel,
-  SensorTHM
+  SensorTHM,
+  SensorTHC
 };
 
 
@@ -21,7 +22,7 @@ const char* sensorProfileToString(uint8_t sProfile) {
   //Here After and before const means that you can not change pointer as well as data
   static const char* const map[] = {
     "SensorNone", "SensorTemp", "SensorTH", "SensorGas"
-    "SensorGyroAccel", "SensorTHM"
+    "SensorGyroAccel", "SensorTHM","SensorTHC"
   };
   return map[sProfile];
 }
@@ -75,12 +76,21 @@ struct SensorPayloadGas : public SensorPayload {
 
 struct SensorPayloadGyroAccel : public SensorPayload {
   SensorPayloadGyroAccel(): gyro(INVALID_GYRO_READING), accel(INVALID_ACCEL_READING) {
-    sensorProfile = SensorProfile::SensorTH;
+    sensorProfile = SensorProfile::SensorGyroAccel;
   }
 
   int16_t gyro;
   int16_t accel;
 } __attribute__ ((packed));
+
+struct SensorPayloadTHC : public SensorPayloadTH {
+  SensorPayloadTHC(): capcitance(INVALID_CAP_READING) {
+    sensorProfile = SensorProfile::SensorTHC;
+  }
+
+  float capcitance;
+} __attribute__ ((packed));
+
 
 SensorPayload           sensorPayload;
 SensorPayloadT          sensorPayloadT;
@@ -88,7 +98,7 @@ SensorPayloadTH         sensorPayloadTH;
 SensorPayloadGyroAccel  sensorPayloadGyroAccel;
 SensorPayloadTHM        sensorPayloadTHM;
 SensorPayloadGas        sensorPayloadGas;
-
+SensorPayloadTHC        sensorPayloadTHC;
 
 
 #define PAYLOAD_NONE   sensorPayload
@@ -97,5 +107,6 @@ SensorPayloadGas        sensorPayloadGas;
 #define PAYLOAD_THM    sensorPayloadTHM
 #define PAYLOAD_GA     sensorPayloadGyroAccel
 #define PAYLOAD_GAS    sensorPayloadGas
+#define PAYLOAD_THC    sensorPayloadTHC
 
 #endif

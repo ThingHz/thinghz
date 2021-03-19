@@ -21,7 +21,8 @@ enum DeviceStateEvent {
   DSE_HUMIDAlarm              = 1 << 6,
   DSE_GASFaulty               = 1 << 7,
   DSE_GYROFaulty              = 1 << 8,
-  DSE_LIGHTFaulty             = 1 << 9
+  DSE_LIGHTFaulty             = 1 << 9,
+  DSE_CAPfaulty               = 1 << 10
 };
 
 //advance declaration
@@ -43,7 +44,8 @@ class RunTimeState {
       macAddr(DEVICE_ID_DEFAULT),
       batteryPercentage(BATT_VOL_100),
       temperature(INVALID_TEMP_READING),
-      humidity(INVALID_HUMIDITY_READING)
+      humidity(INVALID_HUMIDITY_READING),
+      capacitance(INVALID_CAP_READING)
     {
 
     }
@@ -57,6 +59,7 @@ class RunTimeState {
     int batteryPercentage;
     float temperature;
     float humidity;
+    float capacitance;
 };
 
 /**

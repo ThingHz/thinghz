@@ -4,38 +4,46 @@
 #include "hardwareDefs.h"
 #include "sensorRead.h"
 #include "utils.h"
+#include <Wire.h>
 #include "WiFiOTA.h"
 #include <rom/rtc.h>
 #include <esp_wifi.h>
 #include <esp_bt.h>
 #include <driver/adc.h>
+#include <Protocentral_FDC1004.h>
 
-DeviceState         state;
-DeviceState& deviceState = state;
+DeviceState state;
+DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
+FDC1004 FDC;
 
-
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
   Serial.begin(115200);
-
-
-  if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
+  Wire.begin();
+  if (!EEPROM.begin(EEPROM_STORE_SIZE))
+  {
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
 
   bool rc = deviceState.load();
-  if (!rc) {
+  if (!rc)
+  {
     DEBUG_PRINTLN("EEPROM Values not loaded");
-  } else {
+  }
+  else
+  {
     DEBUG_PRINTLN("Values Loaded");
   }
 
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
-  if ( (int)rtc_get_reset_reason(0) == 1)  { // =  SW_CPU_RESET
-    RSTATE.isPortalActive  = true;
-    if (!APConnection(AP_MODE_SSID)) {
+  if ((int)rtc_get_reset_reason(0) == 1)
+  { // =  SW_CPU_RESET
+    RSTATE.isPortalActive = true;
+    if (!APConnection(AP_MODE_SSID))
+    {
       DEBUG_PRINTLN("Error Setting Up AP Connection");
       return;
     }
@@ -45,42 +53,49 @@ void setup() {
     delay(100);
   }
 
-  if (!RSTATE.isPortalActive) {
-    if (setCpuFrequencyMhz(80)) {
+  if (!RSTATE.isPortalActive)
+  {
+    if (setCpuFrequencyMhz(80))
+    {
       DEBUG_PRINTLN("Set to 80MHz");
     }
   }
 
-  pinMode(SIG_PIN,              OUTPUT);
-  pinMode(TEMP_SENSOR_PIN,      INPUT);
-  pinMode(CONFIG_PIN,           INPUT);
-  pinMode(VOLTAGE_DIV_PIN,      OUTPUT);
+  pinMode(SIG_PIN, OUTPUT);
+  pinMode(TEMP_SENSOR_PIN, INPUT);
+  pinMode(CONFIG_PIN, INPUT);
+  pinMode(VOLTAGE_DIV_PIN, OUTPUT);
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
   analogSetAttenuation(ADC_0db);
   shtInit();
   DSB112Init();
-
-  if (!isSHTAvailable()) {
+  if (!isSHTAvailable())
+  {
     DEBUG_PRINTLN("SHT Not connected");
   }
 
-  if (readSHT()) {
+
+  if (readSHT())
+  {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
     DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE)) {
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+    {
       goToDeepSleep();
     }
   }
 
-  if (readDSB112()) {
+  if (readDSB112())
+  {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE)) {
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+    {
       goToDeepSleep();
     }
   }
 
-
-  if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+  if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+  {
     rtcState.missedDataPoint++;
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
@@ -91,112 +106,139 @@ void setup() {
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
 }
 
-
-void loop() {
-
-  if (!RSTATE.isPortalActive) {
-    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+void loop()
+{
+  readFDCMeasurementSingle();
+  if (!RSTATE.isPortalActive)
+  {
+    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+    {
       DEBUG_PRINTLN("Error connecting to WiFi");
       goToDeepSleep();
     }
-    if (cloudTalk.sendPayload()) {
-       digitalWrite(SIG_PIN, HIGH);
-       delay(500);
-       digitalWrite(SIG_PIN, LOW);
+    if (cloudTalk.sendPayload())
+    {
+      digitalWrite(SIG_PIN, HIGH);
+      delay(500);
+      digitalWrite(SIG_PIN, LOW);
     }
-   
+
     DEBUG_PRINTLN("Going to sleep");
     goToDeepSleep();
   }
 
-  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
+  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
+  {
     RSTATE.isPortalActive = false;
   }
 }
 
-bool checkAlarm(uint8_t sProfile) {
+bool checkAlarm(uint8_t sProfile)
+{
   bool isAlarm = false;
   DEBUG_PRINTLN(sProfile);
-  switch (sProfile) {
-    case SensorProfile::SensorNone :
+  switch (sProfile)
+  {
+  case SensorProfile::SensorNone:
+    isAlarm = true;
+    break;
+  case SensorProfile::SensorTemp:
+  {
+    if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
+         (int)RSTATE.temperature > PSTATE.targetTempMin) &&
+        rtcState.wakeUpCount < MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("Value is in range going to sleep");
+      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+      rtcState.wakeUpCount++;
+      rtcState.isEscalation = 0;
+      isAlarm = false;
+    }
+    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("has Reached max offline cout now log data");
+      rtcState.wakeUpCount = 0;
       isAlarm = true;
-      break;
-    case SensorProfile::SensorTemp : {
-        if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
-             (int)RSTATE.temperature > PSTATE.targetTempMin) &&
-            rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("Value is in range going to sleep");
-          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-          rtcState.wakeUpCount++;
-          rtcState.isEscalation = 0;
-          isAlarm = false;
-        } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("has Reached max offline cout now log data");
-          rtcState.wakeUpCount = 0;
-          isAlarm = true;
-        } else {
-          DEBUG_PRINTLN("Values not in range going to sleep");
-          rtcState.isEscalation++;
-          rtcState.wakeUpCount = 0;
-          isAlarm = true;
-        }
-      }
-      break;
-    case SensorProfile::SensorTH : {
-        DEBUG_PRINTLN(rtcState.wakeUpCount);
-        DEBUG_PRINTLN(PSTATE.targetTempMax);
-        DEBUG_PRINTLN(PSTATE.targetTempMin);
-        if ((((int)RSTATE.temperature < PSTATE.targetTempMax &&
-              (int)RSTATE.temperature > PSTATE.targetTempMin)) &&
-            (rtcState.wakeUpCount < MAX_WAKEUP_COUNT)) {
-          DEBUG_PRINTLN("Value is in range going to sleep");
-          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-          rtcState.wakeUpCount++;
-          rtcState.isEscalation = 0;
-          isAlarm = false;
-        } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("has Reached max offline cout now log data");
-          rtcState.wakeUpCount = 0;
-          isAlarm = true;
-        } else {
-          DEBUG_PRINTLN("Values not in range Log data");
-          isAlarm = true;
-          rtcState.wakeUpCount = 0;
-          rtcState.isEscalation++;
-        }
-      }
-      break;
-    default:
-      if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
-           (int)RSTATE.temperature > PSTATE.targetTempMin) &&
-          rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
-        DEBUG_PRINTLN("Value is in range going to sleep");
-        DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-        rtcState.wakeUpCount++;
-        rtcState.isEscalation = 0;
-        isAlarm = false;
-      } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
-        DEBUG_PRINTLN("has Reached max offline cout now log data");
-        rtcState.wakeUpCount = 0;
-        isAlarm = true;
-      } else {
-        DEBUG_PRINTLN("Values not in range going to sleep");
-        isAlarm = true;
-        rtcState.wakeUpCount = 0;
-        rtcState.isEscalation++;
-      }
-      break;
+    }
+    else
+    {
+      DEBUG_PRINTLN("Values not in range going to sleep");
+      rtcState.isEscalation++;
+      rtcState.wakeUpCount = 0;
+      isAlarm = true;
+    }
+  }
+  break;
+  case SensorProfile::SensorTH:
+  {
+    DEBUG_PRINTLN(rtcState.wakeUpCount);
+    DEBUG_PRINTLN(PSTATE.targetTempMax);
+    DEBUG_PRINTLN(PSTATE.targetTempMin);
+    if ((((int)RSTATE.temperature < PSTATE.targetTempMax &&
+          (int)RSTATE.temperature > PSTATE.targetTempMin)) &&
+        (rtcState.wakeUpCount < MAX_WAKEUP_COUNT))
+    {
+      DEBUG_PRINTLN("Value is in range going to sleep");
+      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+      rtcState.wakeUpCount++;
+      rtcState.isEscalation = 0;
+      isAlarm = false;
+    }
+    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("has Reached max offline cout now log data");
+      rtcState.wakeUpCount = 0;
+      isAlarm = true;
+    }
+    else
+    {
+      DEBUG_PRINTLN("Values not in range Log data");
+      isAlarm = true;
+      rtcState.wakeUpCount = 0;
+      rtcState.isEscalation++;
+    }
+  }
+  break;
+  default:
+    if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
+         (int)RSTATE.temperature > PSTATE.targetTempMin) &&
+        rtcState.wakeUpCount < MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("Value is in range going to sleep");
+      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+      rtcState.wakeUpCount++;
+      rtcState.isEscalation = 0;
+      isAlarm = false;
+    }
+    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("has Reached max offline cout now log data");
+      rtcState.wakeUpCount = 0;
+      isAlarm = true;
+    }
+    else
+    {
+      DEBUG_PRINTLN("Values not in range going to sleep");
+      isAlarm = true;
+      rtcState.wakeUpCount = 0;
+      rtcState.isEscalation++;
+    }
+    break;
   }
 
   return isAlarm;
 }
 
-void goToDeepSleep() {
-  
+void goToDeepSleep()
+{
+
   bool rc = deviceState.store();
-  if (!rc) {
+  if (!rc)
+  {
     DEBUG_PRINTLN("EEPROM Values not loaded");
-  } else {
+  }
+  else
+  {
     DEBUG_PRINTLN("Values Loaded");
   }
   WiFi.disconnect();
@@ -221,4 +263,33 @@ float readBatValue()
   DEBUG_PRINTF("adcVal %d\n", adcVal);
   DEBUG_PRINTF("batteryVoltage %.1f\n", batVol);
   return batVol;
+}
+
+void readFDCMeasurementSingle(){
+  FDC.configureMeasurementSingle(MEASURMENT, CHANNEL, capdac);
+  FDC.triggerSingleMeasurement(MEASURMENT, FDC1004_100HZ);
+
+  //wait for completion
+  delay(15);
+  uint16_t value[2];
+  if (! FDC.readMeasurement(MEASURMENT, value))
+  {
+    int16_t msb = (int16_t) value[0];
+    int32_t capacitance = ((int32_t)457) * ((int32_t)msb); //in attofarads
+    capacitance /= 1000;   //in femtofarads
+    capacitance += ((int32_t)3028) * ((int32_t)capdac);
+    RSTATE.capacitance = (float)capacitance / 1000;
+    
+    if (msb > UPPER_BOUND)               // adjust capdac accordingly
+    {
+      if (capdac < FDC1004_CAPDAC_MAX)
+        capdac++;
+    }
+    else if (msb < LOWER_BOUND)
+    {
+      if (capdac > 0)
+        capdac--;
+    }
+
+  }
 }
