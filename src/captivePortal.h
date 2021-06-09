@@ -16,6 +16,8 @@ char responsePayload[RESPONSE_LENGTH];
 
 char correcResponsePayload[RESPONSE_LENGTH];
 
+char checkResponsePayload[RESPONSE_LENGTH];
+
 char credResponsePayload[RESPONSE_LENGTH];
 
 char tempRequestPayload[RESPONSE_LENGTH];
@@ -31,7 +33,9 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 	<FORM action="/cred" method= "get">
 		<P><label style="font-family:Times New Roman">WiFi SSID</label><br><input maxlength="30px" type = "text" name="ssid" id="ssid" placeholder= "SSID" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;>
 		<br><label style="font-family:Times New Roman">WiFi Password</label><br><input maxlength="30px" type = "text" name="pass" id="pass" placeholder= "Password" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;><br>
-		<br><label style="font-family:Times New Roman">Device ID</label><br><input maxlength="30px" type = "text" name="device" id="device" placeholder= "deviceId" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;><br>
+		<br><label style="font-family:Times New Roman">Device ID</label><br><input maxlength="30px" type = "text" name="device" id="device" placeholder= "deviceId" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box"><br>
+    <input type="radio" name="configure" value="wifi" id="radio_wifi" style="color:blue;" > Use as a Wifi device &nbsp&nbsp
+    <input type="radio" name="configure" value="ble" id="radio_ble" style="color:blue;">  Use as a BLE Beacon<br>
     </P>
 		<INPUT type="submit"><style>input[type="submit"]{background-color: #3498DB; border: none;color: white;padding:15px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;}</style><br><br>
 	</FORM>
@@ -39,146 +43,6 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 
 		)rawliteral";
 
-const char HTTP_FORM_SET_RANGE_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
-  <style>body{ background-color: #0067B3  ; font-family: Arial, Helvetica, Sans-Serif }</style>
-  </head><title>ThingHz</title><body><div class="container" align="center" ><center><br>
-    <h1 style="color:#ffffff; font-family:Times New Roman,Times,Serif;padding-top: 10px;padding-bottom: 5px;font-size: 70px;font-style: oblique">ThingHz</h1>
-    <FORM action="/alarm" method= "get">
-      <h3 style="color:#FFFFFF;font-family:Times New Roman,Times,Serif;padding-bottom: 20px;text-align: center;font-size: 20px">Alarm Condition</h3>
-          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Acceptable Temperature Range</label><br><br>
-          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
-		  <select name="tMax" id="tMax_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
-            <option value="40">20&#8451 </option>
-            <option value="39">19&#8451 </option>
-            <option value="38">18&#8451 </option>
-            <option value="37">17&#8451 </option>
-            <option value="36">16&#8451 </option>
-            <option value="35">15&#8451 </option>
-			      <option value="34">14&#8451 </option>
-            <option value="33">13&#8451 </option>
-            <option value="32">12&#8451 </option>
-            <option value="31">11&#8451 </option> 
-            <option value="30">20&#8451 </option>
-            <option value="29">19&#8451 </option>
-            <option value="28">18&#8451 </option>
-            <option value="27">17&#8451 </option>
-            <option value="26">16&#8451 </option>
-            <option value="25">15&#8451 </option>
-			      <option value="24">14&#8451 </option>
-            <option value="23">13&#8451 </option>
-            <option value="22">12&#8451 </option>
-            <option value="21">11&#8451 </option> 
-            <option value="20">20&#8451 </option>
-            <option value="19">19&#8451 </option>
-            <option value="18">18&#8451 </option>
-            <option value="17">17&#8451 </option>
-            <option value="16">16&#8451 </option>
-            <option value="15">15&#8451 </option>
-			      <option value="14">14&#8451 </option>
-            <option value="13">13&#8451 </option>
-            <option value="12">12&#8451 </option>
-            <option value="11">11&#8451 </option>
-			      <option value="10">10&#8451 </option>
-            <option value="9">9&#8451 </option>
-            <option value="8">8&#8451 </option>
-            <option value="7">7&#8451 </option>
-            <option value="6">6&#8451 </option>
-            <option value="5">5&#8451 </option>
-            <option value="4">4&#8451 </option>
-            <option value="3">3&#8451 </option>
-            <option value="2">2&#8451 </option>
-            <option value="1">1&#8451 </option>
-            <option value="0">0&#8451 </option>
-          </select>&nbsp&nbsp&nbsp&nbsp 
-		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">min</label>&nbsp&nbsp&nbsp&nbsp
-		  <select name="tMin" id="tMin_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px;border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
-            <option value="15">15&#8451 </option>
-			      <option value="14">14&#8451 </option>
-            <option value="13">13&#8451 </option>
-            <option value="12">12&#8451 </option>
-            <option value="11">11&#8451 </option>
-			      <option value="10">10&#8451 </option>
-            <option value="9">9&#8451 </option>
-            <option value="8">8&#8451 </option>
-            <option value="7">7&#8451 </option>
-            <option value="6">6&#8451 </option>
-            <option value="5">5&#8451 </option>
-            <option value="4">4&#8451 </option>
-            <option value="3">3&#8451 </option>
-            <option value="2">2&#8451 </option>
-            <option value="1">1&#8451 </option>
-            <option value="0">0&#8451 </option>
-            <option value="-1">-1&#8451 </option>
-            <option value="-2">-2&#8451 </option>
-            <option value="-3">-3&#8451 </option>
-            <option value="-4">-4&#8451 </option>
-            <option value="-5">-5&#8451 </option>
-			      <option value="-6">-6&#8451 </option>
-            <option value="-7">-7&#8451 </option>
-            <option value="-8">-8&#8451 </option>
-            <option value="-9">-9&#8451 </option>
-            <option value="-10">-10&#8451 </option>
-            <option value="-1">-11&#8451 </option>
-            <option value="-2">-12&#8451 </option>
-            <option value="-3">-13&#8451 </option>
-            <option value="-4">-14&#8451 </option>
-            <option value="-5">-15&#8451 </option>
-			      <option value="-6">-16&#8451 </option>
-            <option value="-7">-17&#8451 </option>
-            <option value="-18">-18&#8451 </option>
-            <option value="-19">-19&#8451 </option>
-            <option value="-20">-20&#8451 </option>
-          </select><br><br><br>
-          <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">Acceptable Humidity Range</label><br><br>
-		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">max</label>&nbsp&nbsp&nbsp&nbsp
-          <select name="hMax" id="hMax_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px; border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
-            <option value="20">20% </option>
-            <option value="19">19% </option>
-            <option value="18">18% </option>
-            <option value="17">17% </option>
-            <option value="16">16% </option>
-            <option value="15">15% </option>
-			      <option value="14">14% </option>
-            <option value="13">13% </option>
-            <option value="12">12% </option>
-            <option value="11">11% </option>
-			      <option value="10">10% </option>
-            <option value="9">9% </option>
-            <option value="8">8% </option>
-            <option value="7">7% </option>
-            <option value="6">6% </option>
-            <option value="5">5% </option>
-            <option value="4">4% </option>
-            <option value="3">3% </option>
-            <option value="2">2% </option>
-            <option value="1">1% </option>
-          </select>&nbsp&nbsp&nbsp&nbsp
-		  <label style="color:#FFFFFF;font-family:Courier New;padding-bottom: 10px;text-align: justify;font-size: 18px">min</label>&nbsp&nbsp&nbsp&nbsp
-		  <select name="hMin" id="hMin_id" style="border:2px;  padding: 5px 100px; display: inline-block; margin-top:5px; border: 2px solid #3498DB; border-radius: 4px;box-sizing: border-box;">
-            <option value="20">20% </option>
-            <option value="19">19% </option>
-            <option value="18">18% </option>
-            <option value="17">17% </option>
-            <option value="16">16% </option>
-            <option value="15">15% </option>
-			      <option value="14">14% </option>
-            <option value="13">13% </option>
-            <option value="12">12% </option>
-            <option value="11">11% </option>
-			      <option value="10">10% </option>
-            <option value="9">9% </option>
-            <option value="8">8% </option>
-            <option value="7">7% </option>
-            <option value="6">6% </option>
-            <option value="5">5% </option>
-            <option value="4">4% </option>
-            <option value="3">3% </option>
-            <option value="2">2% </option>
-            <option value="1">1% </option>
-          </select><br><br>
-		  <INPUT type="submit" > <style>input[type="submit"]{background-color: #3498DB;border: none;color: white;padding:10px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;}</style></div>
-      </div>
-      </FORM>  )rawliteral";
 
 const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
     <style>body{ background-color: #0067B3  ; font-family: Arial, Helvetica, Sans-Serif }</style>
@@ -249,40 +113,36 @@ class ESPCaptivePortal
     void servePortal ( bool isAPActive ) {
 
       server.on("/cred", HTTP_GET, [](AsyncWebServerRequest * request) {
-        if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass")) {
-          PSTATE.deviceId = request->getParam("device")->value();
-          DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
+        if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass") && request->hasParam("configure")) {
+          if (request->hasParam("device")) {
+            PSTATE.deviceId = request->getParam("device")->value();
+            DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
+          }
+        
           PSTATE.apSSID = request->getParam("ssid")->value();
           DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
           PSTATE.apPass = request->getParam("pass")->value();
           DEBUG_PRINTF("Pass Stored %s\t\n", PSTATE.apPass.c_str());
-          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"deviceId\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(),(PSTATE.deviceId).c_str());
-          request->send(200, "application/json", credResponsePayload);
+          String bleSelected = request->getParam("configure")->value();
+          DEBUG_PRINTF("ble stored %s\t\n", bleSelected.c_str());
+          if(bleSelected == "ble"){
+              PSTATE.isBLE = 1;
+          }else{
+              PSTATE.isBLE = 0;
+          }
+          
+          if (request->hasParam("device")) {
+            snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"deviceId\":%s,\"isBLE\":%d}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), (PSTATE.deviceId).c_str(), PSTATE.isBLE);
+            request->send(200, "application/json", credResponsePayload);
+          } else {
+            snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"isBLE\":%d}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), PSTATE.isBLE);
+            request->send(200, "application/json", credResponsePayload);
+          }
         } else {
           request->send_P(200, "text/html", HTTP_FORM_WIFISET);
         }
       });
 
-      server.on("/alarm", HTTP_GET, [](AsyncWebServerRequest * request) {
-        if (request->params() > 0 && request->hasParam("tMin") && request->hasParam("tMax") && request->hasParam("hMin") && request->hasParam("hMax")) {
-          PSTATE.targetTempMin = (request->getParam("tMin")->value()).toInt();
-          DEBUG_PRINTF("targetTempMin %d\t\n", PSTATE.targetTempMin);
-          PSTATE.targetTempMax = (request->getParam("tMax")->value()).toInt();
-          DEBUG_PRINTF("targetTempMax %d\t\n", PSTATE.targetTempMax);
-          PSTATE.targetHumidityMin = (request->getParam("hMin")->value()).toInt();
-          DEBUG_PRINTF("targetHumidMin %d\t\n", PSTATE.targetHumidityMin);
-          PSTATE.targetHumidityMax = (request->getParam("hMax")->value()).toInt();
-          DEBUG_PRINTF("targetHumidMax %d\t\n", PSTATE.targetHumidityMax);
-          snprintf(correcResponsePayload, RESPONSE_LENGTH, "{\"targetTempMin\":%d,\"targetTempMax\":%d,\"targetHumidMin\":%d,\"targetHumidMax\":%d}",
-                   PSTATE.targetTempMin,
-                   PSTATE.targetTempMax,
-                   PSTATE.targetHumidityMin,
-                   PSTATE.targetHumidityMax);
-          request->send(200, "application/json", correcResponsePayload);
-        } else {
-          request->send_P(200, "text/html", HTTP_FORM_SET_RANGE_FACTOR);
-        }
-      });
 
       server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
         if (request->params() > 0 && request->hasParam("tCall")) {
@@ -293,6 +153,13 @@ class ESPCaptivePortal
         } else {
           request->send_P(200, "text/html", HTTP_FORM_SET_CALLIBRATION_FACTOR);
         }
+      });
+
+      server.on("/check", HTTP_GET, [](AsyncWebServerRequest * request) {
+        String isSuccess = "true";
+        snprintf(checkResponsePayload, RESPONSE_LENGTH, "{\"Success\":\"%s\",\"DeviceId\":\"%s\"}",
+                 isSuccess.c_str(),(PSTATE.deviceId).c_str());
+        request->send(200, "application/json", checkResponsePayload);
       });
 
       server.onNotFound(_handleNotFound);

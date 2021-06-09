@@ -80,7 +80,7 @@ String formApSsidName(String deviceId) {
 
 #define BATTERY_INITIAL_READING    0
 #define INVALID_TEMP_READING      99
-#define INVALID_HUMIDITY_READING  -1
+#define INVALID_HUMIDITY_READING  0
 #define INVALID_GAS_READING       -1
 #define INVALID_LIGHT_READING     -1
 #define INVALID_MOISTURE_READING  -1

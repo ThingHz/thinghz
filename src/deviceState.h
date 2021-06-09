@@ -78,7 +78,8 @@ class PersistantState {
       targetHumidityMax(MAX_TARGET_HUMID),
       tempCalibration(CALIBRATION_LEVEL),
       isOtaAvailable(0),
-      newfWVersion(0)
+      newfWVersion(0),
+      isBLE(0)
     {
 
     }
@@ -91,6 +92,7 @@ class PersistantState {
               (deviceId == rhs.deviceId) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
               (newfWVersion == rhs.newfWVersion) &&
+              (isBLE == rhs.isBLE) &&
               (targetTempMin == rhs.targetTempMin) &&
               (targetHumidityMin == rhs.targetHumidityMin) &&
               (targetTempMax == rhs.targetTempMax) &&
@@ -108,6 +110,8 @@ class PersistantState {
     int tempCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
+    uint8_t isBLE;
+   
 };
 
 /**

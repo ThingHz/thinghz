@@ -6,6 +6,7 @@
 #include "utils.h"
 #include <Wire.h>
 #include "WiFiOTA.h"
+#include "espBLE.h"
 #include <rom/rtc.h>
 #include <esp_wifi.h>
 #include <esp_bt.h>
@@ -17,6 +18,7 @@ DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
 FDC1004 FDC;
+ESPble espBle;
 
 void setup()
 {
@@ -74,7 +76,6 @@ void setup()
     DEBUG_PRINTLN("SHT Not connected");
   }
 
-
   if (readSHT())
   {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
@@ -94,6 +95,12 @@ void setup()
     }
   }
 
+  if (espBle.setupBLE(RSTATE.isPortalActive, PSTATE.isBLE))
+  {
+    blinkLed();
+    goToDeepSleep();
+  }
+
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
   {
     rtcState.missedDataPoint++;
@@ -111,17 +118,21 @@ void loop()
   readFDCMeasurementSingle();
   if (!RSTATE.isPortalActive)
   {
-    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+    DEBUG_PRINTF("Mode Activated:%d", PSTATE.isBLE);  
+    if (espBle.setupBLE(RSTATE.isPortalActive, PSTATE.isBLE))
+    {
+      DEBUG_PRINTLN("BLE mode selscted");
+      blinkLed();
+      goToDeepSleep();
+    }
+    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300) && !PSTATE.isBLE)
     {
       DEBUG_PRINTLN("Error connecting to WiFi");
       goToDeepSleep();
     }
+
     if (cloudTalk.sendPayload())
-    {
-      digitalWrite(SIG_PIN, HIGH);
-      delay(500);
-      digitalWrite(SIG_PIN, LOW);
-    }
+      blinkLed();
 
     DEBUG_PRINTLN("Going to sleep");
     goToDeepSleep();
@@ -131,6 +142,13 @@ void loop()
   {
     RSTATE.isPortalActive = false;
   }
+}
+
+void blinkLed()
+{
+  digitalWrite(SIG_PIN, HIGH);
+  delay(500);
+  digitalWrite(SIG_PIN, LOW);
 }
 
 bool checkAlarm(uint8_t sProfile)
@@ -245,9 +263,9 @@ void goToDeepSleep()
   WiFi.mode(WIFI_OFF);
   digitalWrite(VOLTAGE_DIV_PIN, HIGH);
   DEBUG_PRINTLN("going to sleep");
-  btStop();
+  //btStop();
   //esp_wifi_stop();
-  esp_bt_controller_disable();
+  //esp_bt_controller_disable();
   //adc_power_off();
   esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP * MICRO_SECS_MULITPLIER);
   //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);
@@ -265,22 +283,25 @@ float readBatValue()
   return batVol;
 }
 
-void readFDCMeasurementSingle(){
+
+
+void readFDCMeasurementSingle()
+{
   FDC.configureMeasurementSingle(MEASURMENT, CHANNEL, capdac);
   FDC.triggerSingleMeasurement(MEASURMENT, FDC1004_100HZ);
 
   //wait for completion
   delay(15);
   uint16_t value[2];
-  if (! FDC.readMeasurement(MEASURMENT, value))
+  if (!FDC.readMeasurement(MEASURMENT, value))
   {
-    int16_t msb = (int16_t) value[0];
+    int16_t msb = (int16_t)value[0];
     int32_t capacitance = ((int32_t)457) * ((int32_t)msb); //in attofarads
-    capacitance /= 1000;   //in femtofarads
+    capacitance /= 1000;                                   //in femtofarads
     capacitance += ((int32_t)3028) * ((int32_t)capdac);
     RSTATE.capacitance = (float)capacitance / 1000;
-    
-    if (msb > UPPER_BOUND)               // adjust capdac accordingly
+
+    if (msb > UPPER_BOUND) // adjust capdac accordingly
     {
       if (capdac < FDC1004_CAPDAC_MAX)
         capdac++;
@@ -290,6 +311,5 @@ void readFDCMeasurementSingle(){
       if (capdac > 0)
         capdac--;
     }
-
   }
 }
