@@ -115,7 +115,6 @@ void setup()
 
 void loop()
 {
-  readFDCMeasurementSingle();
   if (!RSTATE.isPortalActive)
   {
     DEBUG_PRINTF("Mode Activated:%d", PSTATE.isBLE);  
@@ -281,35 +280,4 @@ float readBatValue()
   DEBUG_PRINTF("adcVal %d\n", adcVal);
   DEBUG_PRINTF("batteryVoltage %.1f\n", batVol);
   return batVol;
-}
-
-
-
-void readFDCMeasurementSingle()
-{
-  FDC.configureMeasurementSingle(MEASURMENT, CHANNEL, capdac);
-  FDC.triggerSingleMeasurement(MEASURMENT, FDC1004_100HZ);
-
-  //wait for completion
-  delay(15);
-  uint16_t value[2];
-  if (!FDC.readMeasurement(MEASURMENT, value))
-  {
-    int16_t msb = (int16_t)value[0];
-    int32_t capacitance = ((int32_t)457) * ((int32_t)msb); //in attofarads
-    capacitance /= 1000;                                   //in femtofarads
-    capacitance += ((int32_t)3028) * ((int32_t)capdac);
-    RSTATE.capacitance = (float)capacitance / 1000;
-
-    if (msb > UPPER_BOUND) // adjust capdac accordingly
-    {
-      if (capdac < FDC1004_CAPDAC_MAX)
-        capdac++;
-    }
-    else if (msb < LOWER_BOUND)
-    {
-      if (capdac > 0)
-        capdac--;
-    }
-  }
 }

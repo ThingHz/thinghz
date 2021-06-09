@@ -44,8 +44,7 @@ class RunTimeState {
       macAddr(DEVICE_ID_DEFAULT),
       batteryPercentage(BATT_VOL_100),
       temperature(INVALID_TEMP_READING),
-      humidity(INVALID_HUMIDITY_READING),
-      capacitance(INVALID_CAP_READING)
+      humidity(INVALID_HUMIDITY_READING)
     {
 
     }
@@ -59,7 +58,6 @@ class RunTimeState {
     int batteryPercentage;
     float temperature;
     float humidity;
-    float capacitance;
 };
 
 /**
