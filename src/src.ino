@@ -6,7 +6,6 @@
 #include "utils.h"
 #include <Wire.h>
 #include "WiFiOTA.h"
-#include "espBLE.h"
 #include <rom/rtc.h>
 #include <esp_wifi.h>
 #include <esp_bt.h>
@@ -18,7 +17,7 @@ DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
 FDC1004 FDC;
-ESPble espBle;
+//ESPble espBle;
 
 void setup()
 {
@@ -95,12 +94,6 @@ void setup()
     }
   }
 
-  if (espBle.setupBLE(RSTATE.isPortalActive, PSTATE.isBLE))
-  {
-    blinkLed();
-    goToDeepSleep();
-  }
-
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
   {
     rtcState.missedDataPoint++;
@@ -118,12 +111,6 @@ void loop()
   if (!RSTATE.isPortalActive)
   {
     DEBUG_PRINTF("Mode Activated:%d", PSTATE.isBLE);  
-    if (espBle.setupBLE(RSTATE.isPortalActive, PSTATE.isBLE))
-    {
-      DEBUG_PRINTLN("BLE mode selscted");
-      blinkLed();
-      goToDeepSleep();
-    }
     if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300) && !PSTATE.isBLE)
     {
       DEBUG_PRINTLN("Error connecting to WiFi");
