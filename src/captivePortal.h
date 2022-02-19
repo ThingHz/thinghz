@@ -4,7 +4,7 @@
 #include <pgmspace.h>
 #include "deviceState.h"
 #include "utils.h"
-#include "hardwaredefs.h"
+#include "hardwareDefs.h"
 #include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h"
 #define  RESPONSE_LENGTH 200

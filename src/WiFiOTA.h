@@ -1,9 +1,9 @@
 #ifndef WIFI_OTA_H
 #define WIFI_OTA_H
-#include "hardwaredefs.h"
+#include "hardwareDefs.h"
 #include <SPIFFS.h>
 #include <Update.h>
-#include "devicestate.h"
+#include "deviceState.h"
 
 
 const IPAddress apIP(192, 168, 4, 1);

@@ -4,9 +4,9 @@
 #include <HTTPClient.h>
 #include "ArduinoJson.h"
 #include <SPIFFS.h>
-#include "wifiOTA.h"
+#include "WiFiOTA.h"
 #include "deviceState.h"
-#include "hardwaredefs.h"
+#include "hardwareDefs.h"
 #include "utils.h"
 #include "SensorPayload.h"
 #define JSON_MSG_MAX_LEN          512
@@ -16,7 +16,7 @@ DynamicJsonDocument jsonDocument(1024);
 
 //const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data";
 const char urlmessageSend[] = "https://api.thinghz.com/v1/data";
-const char urlOtaSend[]     = "http://3.19.52.97:9955/api/data/download-file?filename=%s"; //URL for ota file download
+const char urlOtaSend[]     = "https://api.thinghz.com/v1/data/download-file?filename=%s"; //URL for ota file download
 
 // payload structure for OTA result update to cloud
 const char COOLNEXT_OTA_BODY[] = "{\"deviceId\":\"%s\",\"firmwareVersion\":\"%s\"}";
