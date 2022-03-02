@@ -21,6 +21,8 @@ const char* deviceTypeEnumToString(uint8_t devType) {
 }
 
 #define AP_MODE_SSID "ThingHz-"
+//#define SW_CPU_RESET  12
+//#define VBAT_POWER_RESET  1
 
 String formApSsidName(String deviceId) {
   return String(AP_MODE_SSID + deviceId);
@@ -92,9 +94,10 @@ String formApSsidName(String deviceId) {
 #define MAX_TARGET_TEMP               20
 #define MIN_TARGET_HUMID              20
 #define MAX_TARGET_HUMID              60
-#define MAX_WAKEUP_COUNT              3
+#define MAX_WAKEUP_COUNT              1
 #define MIN_WAKEUP_COUNT              0
 #define CALIBRATION_LEVEL             0
+
 
 
 #ifdef DEBUG_SERIAL

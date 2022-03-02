@@ -33,7 +33,7 @@ void setup() {
   }
 
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
-  if ( (int)rtc_get_reset_reason(0) == 1)  { // =  SW_CPU_RESET
+  if ( ((int)rtc_get_reset_reason(0) == 12) || ((int)rtc_get_reset_reason(0) == 1))  { // =  SW_CPU_RESET
     RSTATE.isPortalActive  = true;
     if (!APConnection(AP_MODE_SSID)) {
       DEBUG_PRINTLN("Error Setting Up AP Connection");

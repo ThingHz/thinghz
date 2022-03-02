@@ -57,8 +57,10 @@ bool readDSB112()
 {
   tempSensor.requestTemperatures();
   float temp = tempSensor.getTempCByIndex(0);
+  DEBUG_PRINTF("DSB temprature %.1f",temp);
   if (isnan(temp) || (int)temp < -50) {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
+    DEBUG_PRINTLN("failed to read DSB temperature");
     return false;
   }
   clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
