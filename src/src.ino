@@ -4,31 +4,34 @@
 #include "hardwareDefs.h"
 #include "sensorRead.h"
 #include "utils.h"
+#include <Wire.h>
 #include "WiFiOTA.h"
 #include <rom/rtc.h>
 #include <esp_wifi.h>
-#include <esp_bt.h>
 #include <driver/adc.h>
 
-DeviceState         state;
-DeviceState& deviceState = state;
+DeviceState state;
+DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
 
-
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
   Serial.begin(115200);
-
-
-  if (!EEPROM.begin(EEPROM_STORE_SIZE)) {
+  Wire.begin();
+  if (!EEPROM.begin(EEPROM_STORE_SIZE))
+  {
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
 
   bool rc = deviceState.load();
-  if (!rc) {
+  if (!rc)
+  {
     DEBUG_PRINTLN("EEPROM Values not loaded");
-  } else {
+  }
+  else
+  {
     DEBUG_PRINTLN("Values Loaded");
   }
 
@@ -45,42 +48,48 @@ void setup() {
     delay(100);
   }
 
-  if (!RSTATE.isPortalActive) {
-    if (setCpuFrequencyMhz(80)) {
+  if (!RSTATE.isPortalActive)
+  {
+    if (setCpuFrequencyMhz(80))
+    {
       DEBUG_PRINTLN("Set to 80MHz");
     }
   }
 
-  pinMode(SIG_PIN,              OUTPUT);
-  pinMode(TEMP_SENSOR_PIN,      INPUT);
-  pinMode(CONFIG_PIN,           INPUT);
-  pinMode(VOLTAGE_DIV_PIN,      OUTPUT);
+  pinMode(SIG_PIN, OUTPUT);
+  pinMode(TEMP_SENSOR_PIN, INPUT);
+  pinMode(CONFIG_PIN, INPUT);
+  pinMode(VOLTAGE_DIV_PIN, OUTPUT);
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
   analogSetAttenuation(ADC_0db);
   shtInit();
   DSB112Init();
-
-  if (!isSHTAvailable()) {
+  if (!isSHTAvailable())
+  {
     DEBUG_PRINTLN("SHT Not connected");
   }
 
-  if (readSHT()) {
+  if (readSHT())
+  {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
     DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE)) {
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+    {
       goToDeepSleep();
     }
   }
 
-  if (readDSB112()) {
+  if (readDSB112())
+  {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE)) {
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+    {
       goToDeepSleep();
     }
   }
 
-
-  if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+  if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+  {
     rtcState.missedDataPoint++;
     goToDeepSleep();
     DEBUG_PRINTLN("Error connecting to WiFi");
@@ -91,121 +100,151 @@ void setup() {
   RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
 }
 
-
-void loop() {
-
-  if (!RSTATE.isPortalActive) {
-    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300)) {
+void loop()
+{
+  if (!RSTATE.isPortalActive)
+  {
+    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+    {
       DEBUG_PRINTLN("Error connecting to WiFi");
       goToDeepSleep();
     }
-    if (cloudTalk.sendPayload()) {
-       digitalWrite(SIG_PIN, HIGH);
-       delay(500);
-       digitalWrite(SIG_PIN, LOW);
-    }
-   
+
+    if (cloudTalk.sendPayload())
+      blinkLed();
+
     DEBUG_PRINTLN("Going to sleep");
     goToDeepSleep();
   }
 
-  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive) {
+  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
+  {
     RSTATE.isPortalActive = false;
   }
 }
 
-bool checkAlarm(uint8_t sProfile) {
+void blinkLed()
+{
+  digitalWrite(SIG_PIN, HIGH);
+  delay(500);
+  digitalWrite(SIG_PIN, LOW);
+}
+
+bool checkAlarm(uint8_t sProfile)
+{
   bool isAlarm = false;
   DEBUG_PRINTLN(sProfile);
-  switch (sProfile) {
-    case SensorProfile::SensorNone :
+  switch (sProfile)
+  {
+  case SensorProfile::SensorNone:
+    isAlarm = true;
+    break;
+  case SensorProfile::SensorTemp:
+  {
+    if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
+         (int)RSTATE.temperature > PSTATE.targetTempMin) &&
+        rtcState.wakeUpCount < MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("Value is in range going to sleep");
+      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+      rtcState.wakeUpCount++;
+      rtcState.isEscalation = 0;
+      isAlarm = false;
+    }
+    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("has Reached max offline cout now log data");
+      rtcState.wakeUpCount = 0;
       isAlarm = true;
-      break;
-    case SensorProfile::SensorTemp : {
-        if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
-             (int)RSTATE.temperature > PSTATE.targetTempMin) &&
-            rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("Value is in range going to sleep");
-          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-          rtcState.wakeUpCount++;
-          rtcState.isEscalation = 0;
-          isAlarm = false;
-        } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("has Reached max offline cout now log data");
-          rtcState.wakeUpCount = 0;
-          isAlarm = true;
-        } else {
-          DEBUG_PRINTLN("Values not in range going to sleep");
-          rtcState.isEscalation++;
-          rtcState.wakeUpCount = 0;
-          isAlarm = true;
-        }
-      }
-      break;
-    case SensorProfile::SensorTH : {
-        DEBUG_PRINTLN(rtcState.wakeUpCount);
-        DEBUG_PRINTLN(PSTATE.targetTempMax);
-        DEBUG_PRINTLN(PSTATE.targetTempMin);
-        if ((((int)RSTATE.temperature < PSTATE.targetTempMax &&
-              (int)RSTATE.temperature > PSTATE.targetTempMin)) &&
-            (rtcState.wakeUpCount < MAX_WAKEUP_COUNT)) {
-          DEBUG_PRINTLN("Value is in range going to sleep");
-          DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-          rtcState.wakeUpCount++;
-          rtcState.isEscalation = 0;
-          isAlarm = false;
-        } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
-          DEBUG_PRINTLN("has Reached max offline cout now log data");
-          rtcState.wakeUpCount = 0;
-          isAlarm = true;
-        } else {
-          DEBUG_PRINTLN("Values not in range Log data");
-          isAlarm = true;
-          rtcState.wakeUpCount = 0;
-          rtcState.isEscalation++;
-        }
-      }
-      break;
-    default:
-      if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
-           (int)RSTATE.temperature > PSTATE.targetTempMin) &&
-          rtcState.wakeUpCount < MAX_WAKEUP_COUNT) {
-        DEBUG_PRINTLN("Value is in range going to sleep");
-        DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-        rtcState.wakeUpCount++;
-        rtcState.isEscalation = 0;
-        isAlarm = false;
-      } else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT) {
-        DEBUG_PRINTLN("has Reached max offline cout now log data");
-        rtcState.wakeUpCount = 0;
-        isAlarm = true;
-      } else {
-        DEBUG_PRINTLN("Values not in range going to sleep");
-        isAlarm = true;
-        rtcState.wakeUpCount = 0;
-        rtcState.isEscalation++;
-      }
-      break;
+    }
+    else
+    {
+      DEBUG_PRINTLN("Values not in range going to sleep");
+      rtcState.isEscalation++;
+      rtcState.wakeUpCount = 0;
+      isAlarm = true;
+    }
+  }
+  break;
+  case SensorProfile::SensorTH:
+  {
+    DEBUG_PRINTLN(rtcState.wakeUpCount);
+    DEBUG_PRINTLN(PSTATE.targetTempMax);
+    DEBUG_PRINTLN(PSTATE.targetTempMin);
+    if ((((int)RSTATE.temperature < PSTATE.targetTempMax &&
+          (int)RSTATE.temperature > PSTATE.targetTempMin)) &&
+        (rtcState.wakeUpCount < MAX_WAKEUP_COUNT))
+    {
+      DEBUG_PRINTLN("Value is in range going to sleep");
+      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+      rtcState.wakeUpCount++;
+      rtcState.isEscalation = 0;
+      isAlarm = false;
+    }
+    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("has Reached max offline cout now log data");
+      rtcState.wakeUpCount = 0;
+      isAlarm = true;
+    }
+    else
+    {
+      DEBUG_PRINTLN("Values not in range Log data");
+      isAlarm = true;
+      rtcState.wakeUpCount = 0;
+      rtcState.isEscalation++;
+    }
+  }
+  break;
+  default:
+    if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
+         (int)RSTATE.temperature > PSTATE.targetTempMin) &&
+        rtcState.wakeUpCount < MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("Value is in range going to sleep");
+      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
+      rtcState.wakeUpCount++;
+      rtcState.isEscalation = 0;
+      isAlarm = false;
+    }
+    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
+    {
+      DEBUG_PRINTLN("has Reached max offline cout now log data");
+      rtcState.wakeUpCount = 0;
+      isAlarm = true;
+    }
+    else
+    {
+      DEBUG_PRINTLN("Values not in range going to sleep");
+      isAlarm = true;
+      rtcState.wakeUpCount = 0;
+      rtcState.isEscalation++;
+    }
+    break;
   }
 
   return isAlarm;
 }
 
-void goToDeepSleep() {
-  
+void goToDeepSleep()
+{
+
   bool rc = deviceState.store();
-  if (!rc) {
+  if (!rc)
+  {
     DEBUG_PRINTLN("EEPROM Values not loaded");
-  } else {
+  }
+  else
+  {
     DEBUG_PRINTLN("Values Loaded");
   }
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   digitalWrite(VOLTAGE_DIV_PIN, HIGH);
   DEBUG_PRINTLN("going to sleep");
-  btStop();
+  //btStop();
   //esp_wifi_stop();
-  esp_bt_controller_disable();
+  //esp_bt_controller_disable();
   //adc_power_off();
   esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP * MICRO_SECS_MULITPLIER);
   //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);

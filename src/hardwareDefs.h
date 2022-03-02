@@ -21,8 +21,6 @@ const char* deviceTypeEnumToString(uint8_t devType) {
 }
 
 #define AP_MODE_SSID "ThingHz-"
-//#define SW_CPU_RESET  12
-//#define VBAT_POWER_RESET  1
 
 String formApSsidName(String deviceId) {
   return String(AP_MODE_SSID + deviceId);
@@ -75,17 +73,18 @@ String formApSsidName(String deviceId) {
 #define EEPROM_STORAGE_FORMAT_VERSION           "c1"
 #define EEPROM_STARTING_ADDRESS                 0
 
-#define WAN_WIFI_SSID_DEFAULT                    "Agnextsn_compass"
-#define WAN_WIFI_PASS_DEFAULT                    "Agnext0419"
+#define WAN_WIFI_SSID_DEFAULT                    "Sarthak"
+#define WAN_WIFI_PASS_DEFAULT                    "wireless18"
 #define DEVICE_ID_DEFAULT                        "THING00001"
 
 
 #define BATTERY_INITIAL_READING    0
 #define INVALID_TEMP_READING      99
-#define INVALID_HUMIDITY_READING  -1
+#define INVALID_HUMIDITY_READING  0
 #define INVALID_GAS_READING       -1
 #define INVALID_LIGHT_READING     -1
 #define INVALID_MOISTURE_READING  -1
+#define INVALID_CAP_READING       -1
 #define INVALID_GYRO_READING      -1
 #define INVALID_ACCEL_READING     -1
 
@@ -97,6 +96,15 @@ String formApSsidName(String deviceId) {
 #define MAX_WAKEUP_COUNT              1
 #define MIN_WAKEUP_COUNT              0
 #define CALIBRATION_LEVEL             0
+
+#define CAP_SAMPLE_NUMBER             10
+
+//Values corresponding to FDC
+#define UPPER_BOUND  0X4000                 // max readout capacitance
+#define LOWER_BOUND  (-1 * UPPER_BOUND)
+#define CHANNEL 0                          // channel to be read
+#define MEASURMENT 0                       // measurment channel
+
 
 
 
