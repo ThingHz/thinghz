@@ -4,36 +4,45 @@
 #include "Adafruit_SHT31.h"
 #include "deviceState.h"
 #include <OneWire.h>
-#include "SensorPayload.h"
 #include <DallasTemperature.h>
+#include <EnvironmentCalculations.h>
+#include <BME280I2C.h>
+#include "utils.h"
+
 
 OneWire deviceTemp(TEMP_SENSOR_PIN);
 DallasTemperature tempSensor(&deviceTemp);
 Adafruit_SHT31 sht31(&Wire);
+BME280I2C::Settings settings(
+   BME280::OSR_X1,
+   BME280::OSR_X1,
+   BME280::OSR_X1,
+   BME280::Mode_Forced,
+   BME280::StandbyTime_1000ms,
+   BME280::Filter_16,
+   BME280::SpiEnable_False,
+   BME280I2C::I2CAddr_0x76
+);
 
+BME280I2C bme(settings);
 
-int capdac = 0;
-char result[100];
-
-bool testBit(uint &bits, int bit)
-{
-  return (bits & bit);
-}
-
-void setBit(uint &bits, int bit)
-{
-  bits |= bit;
-}
-
-void clearBit(uint &bits, int bit)
-{
-  bits &= (~bit);
-}
 
 void DSB112Init()
 {
   tempSensor.begin();
 }
+
+bool bmp280Init() {
+  if (!bme.begin())
+  { // Set to 0x45 for alternate i2c addr
+    DEBUG_PRINTLN("Couldn't find SHT31");
+    //setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTDisconnected);
+    return false;
+  }
+  //clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTDisconnected);
+  return true;
+}
+
 
 bool shtInit()
 {
@@ -63,7 +72,7 @@ bool readDSB112()
 {
   tempSensor.requestTemperatures();
   float temp = tempSensor.getTempCByIndex(0);
-  DEBUG_PRINTF("DSB temprature %.1f",temp);
+  DEBUG_PRINTF("DSB temprature %.1f", temp);
   if (isnan(temp) || (int)temp < -50) {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_DSBFaulty);
     DEBUG_PRINTLN("failed to read DSB temperature");
@@ -101,6 +110,22 @@ bool readSHT()
 
   return true;
 }
+
+bool readBMP()
+{
+  float temp(NAN), hum(NAN), pres(NAN);
+
+  BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
+  BME280::PresUnit presUnit(BME280::PresUnit_hPa);
+  bme.read(pres, temp, hum, tempUnit, presUnit);
+  EnvironmentCalculations::AltitudeUnit envAltUnit  =  EnvironmentCalculations::AltitudeUnit_Meters;
+  EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Celsius;
+  float altitude = EnvironmentCalculations::Altitude(pres, envAltUnit, REF_PRESSURE, OUT_TEMP, envTempUnit);
+  float seaLevel = EnvironmentCalculations::EquivalentSeaLevelPressure(BAROMETER_ALTITUDE, temp, pres, envAltUnit, envTempUnit);
+  RSTATE.altitude = altitude;
+  RSTATE.seaLevel = seaLevel;
+  RSTATE.bmpTemp = temp;
+  }
 
 
 #endif

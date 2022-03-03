@@ -3,8 +3,6 @@
 
 #include <EEPROM.h>
 #include "hardwareDefs.h"
-#include "utils.h"
-
 
 /**
    @brief:
@@ -22,7 +20,20 @@ enum DeviceStateEvent {
   DSE_GASFaulty               = 1 << 7,
   DSE_GYROFaulty              = 1 << 8,
   DSE_LIGHTFaulty             = 1 << 9,
-  DSE_CAPfaulty               = 1 << 10
+  DSE_CAPfaulty               = 1 << 10,
+  DSE_DisplayDisconnected     = 1 << 11,
+
+};
+
+enum DisplayMode {
+  DisplayNone,
+  DisplayTemp,
+  DisplayTempHumid,
+  DisplayGas,
+  DisplayCap,
+  DisplayDeviceConfig,
+  DisplayCenterTextLogo,
+  DisplayTempBMP,
 };
 
 //advance declaration
@@ -37,6 +48,7 @@ class RunTimeState {
   public:
     RunTimeState():
       deviceEvents(DeviceStateEvent::DSE_None),
+      displayEvents(DisplayMode::DisplayNone),
       isWiFiConnected(false),
       isAPActive(false),
       isPortalActive(false),
@@ -45,12 +57,16 @@ class RunTimeState {
       batteryPercentage(BATT_VOL_100),
       temperature(INVALID_TEMP_READING),
       humidity(INVALID_HUMIDITY_READING),
-      capacitance(INVALID_CAP_READING)
+      capacitance(INVALID_CAP_READING),
+      altitude(INVALID_ALTITUDE_READING),
+      seaLevel(INVALID_SEA_READING),
+      bmpTemp(INVALID_BMP_TEMP_READING)
     {
 
     }
 
     uint deviceEvents;
+    DisplayMode displayEvents;
     bool isWiFiConnected;
     bool isAPActive;
     bool isPortalActive;
@@ -60,6 +76,9 @@ class RunTimeState {
     float temperature;
     float humidity;
     float capacitance;
+    float altitude;
+    float seaLevel;
+    float bmpTemp;
 };
 
 /**

@@ -9,6 +9,7 @@
 #include <rom/rtc.h>
 #include <esp_wifi.h>
 #include <driver/adc.h>
+#include "oledState.h"
 
 DeviceState state;
 DeviceState &deviceState = state;
@@ -20,6 +21,7 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
   Wire.begin();
+  DEBUG_PRINTLN("This is THingHz Range of wireless sensors");
   if (!EEPROM.begin(EEPROM_STORE_SIZE))
   {
     DEBUG_PRINTLN("Problem loading EEPROM");
@@ -34,7 +36,10 @@ void setup()
   {
     DEBUG_PRINTLN("Values Loaded");
   }
-
+  #ifdef OLED_DISPLAY
+    initDisplay();
+    clearDisplay();
+  #endif
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
   if ( ((int)rtc_get_reset_reason(0) == 12) || ((int)rtc_get_reset_reason(0) == 1))  { // =  SW_CPU_RESET
     RSTATE.isPortalActive  = true;
@@ -64,6 +69,9 @@ void setup()
   analogSetAttenuation(ADC_0db);
   shtInit();
   DSB112Init();
+  bmp280Init();
+
+  
   if (!isSHTAvailable())
   {
     DEBUG_PRINTLN("SHT Not connected");
@@ -73,21 +81,49 @@ void setup()
   {
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
     DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
+    #ifdef OLED_DISPLAY
+      //RSTATE.displayEvents = DisplayTempHumid;
+      //drawDisplay(RSTATE.displayEvents);
+    #endif
+    
     if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
     {
       goToDeepSleep();
     }
   }
 
+  if(readBMP()){
+    DEBUG_PRINTF("TemperatureBMP:%.1f\n", RSTATE.bmpTemp);
+    DEBUG_PRINTF("Altitude:%.1f\n", RSTATE.altitude);
+    DEBUG_PRINTF("SeaLevel:%.1f\n", RSTATE.seaLevel);
+    #ifdef OLED_DISPLAY
+      clearDisplay();
+      RSTATE.displayEvents = DisplayTempBMP;
+      drawDisplay(RSTATE.displayEvents);
+    #endif
+    
+    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+    {
+      goToDeepSleep();
+    }
+  }
+
+
   if (readDSB112())
   {
+    RSTATE.displayEvents = DisplayTemp;
+    drawDisplay(RSTATE.displayEvents);
     DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
     if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
     {
       goToDeepSleep();
     }
   }
-
+  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
+  clearDisplay();
+  RSTATE.displayEvents = DisplayTempBMP;
+  drawDisplay(RSTATE.displayEvents);
+  
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
   {
     rtcState.missedDataPoint++;
@@ -97,7 +133,6 @@ void setup()
 
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
 
-  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
 }
 
 void loop()

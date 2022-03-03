@@ -29,12 +29,14 @@ String formApSsidName(String deviceId) {
 #define SPIFF_OTA_PATH "/"
 
 #define DEBUG_SERIAL 1 // should come from build system
-//#define USE_RTOS 1
 
 /**
    @todo: We need to do this part later
 */
 #define ESP_NOW      1
+
+//Comment out to disable display
+#define OLED_DISPLAY 1
 
 //batery max and min voltages
 #define BATT_VOL_0                 3.0
@@ -63,6 +65,11 @@ String formApSsidName(String deviceId) {
 #define CONFIG_PIN          25
 #define VOLTAGE_DIV_PIN     5
 
+//Display Configuration
+#define SCREEN_WIDTH                            128 // OLED display width, in pixels
+#define SCREEN_HEIGHT                           64 // OLED display height, in pixels
+
+
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
 #define SECS_MULTIPLIER_DEEPSLEEP               900 //900
@@ -78,15 +85,23 @@ String formApSsidName(String deviceId) {
 #define DEVICE_ID_DEFAULT                        "THING00001"
 
 
-#define BATTERY_INITIAL_READING    0
-#define INVALID_TEMP_READING      99
-#define INVALID_HUMIDITY_READING  0
-#define INVALID_GAS_READING       -1
-#define INVALID_LIGHT_READING     -1
-#define INVALID_MOISTURE_READING  -1
-#define INVALID_CAP_READING       -1
-#define INVALID_GYRO_READING      -1
-#define INVALID_ACCEL_READING     -1
+
+#define REF_PRESSURE                            1018.6  // hPa local QFF (official meteor-station reading)
+#define OUT_TEMP                                17.2           // °C  measured local outdoor temp.
+#define BAROMETER_ALTITUDE                      300  // meters ... map readings + barometer position
+
+#define BATTERY_INITIAL_READING     0
+#define INVALID_TEMP_READING        99
+#define INVALID_HUMIDITY_READING    0
+#define INVALID_GAS_READING        -1
+#define INVALID_LIGHT_READING      -1
+#define INVALID_MOISTURE_READING   -1
+#define INVALID_CAP_READING        -1
+#define INVALID_GYRO_READING       -1
+#define INVALID_ACCEL_READING      -1
+#define INVALID_ALTITUDE_READING   -1
+#define INVALID_SEA_READING        -1
+#define INVALID_BMP_TEMP_READING    99
 
 #define MINIMUM_DEBOUNCE_TIME         250
 #define MIN_TARGET_TEMP               4

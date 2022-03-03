@@ -8,6 +8,7 @@
 #include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h"
 #define  RESPONSE_LENGTH 200
+#include <AsyncElegantOTA.h>
 
 AsyncWebServer server(80);
 
@@ -89,6 +90,7 @@ class ESPCaptivePortal
        begins the Async WebServer
     */
     void beginServer() {
+      AsyncElegantOTA.begin(&server);    // Start ElegantOTA
       DEBUG_PRINTLN("Starting the captive portal. You can configure ESp32 values using portal");
       server.begin();
     }
