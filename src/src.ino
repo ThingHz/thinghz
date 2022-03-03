@@ -89,12 +89,11 @@ void setup()
               RSTATE.displayEvents = DisplayTempHumid;
               drawDisplay(RSTATE.displayEvents);
             #endif
-            #ifndef ESP_NOW
-              if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-                  {
-                    goToDeepSleep();
-                  }
-            #endif
+    
+            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+                {
+                  goToDeepSleep();
+                }
           }
       }
       break;
@@ -108,12 +107,10 @@ void setup()
               RSTATE.displayEvents = DisplayTemp;
               drawDisplay(RSTATE.displayEvents);
             #endif
-            #ifndef ESP_NOW
-              if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-                  {
-                    goToDeepSleep();
-                  }
-            #endif
+            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+              {
+                goToDeepSleep();
+              }
           }        
       }
       break;
@@ -130,13 +127,10 @@ void setup()
               RSTATE.displayEvents = DisplayTempBMP;
               drawDisplay(RSTATE.displayEvents);
             #endif
-            
-            #ifndef ESP_NOW
             if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
               {
                 goToDeepSleep();
               }
-            #endif
           }
       }
       break;
@@ -154,17 +148,13 @@ void setup()
               RSTATE.displayEvents = DisplayTempHumidBMP;
               drawDisplay(RSTATE.displayEvents);
             #endif
-            #ifndef ESP_NOW
             if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
               {
                 goToDeepSleep();
               }
-            #endif
           }
       }
       break;
-      case Gateway:
-        switchToESPNowGateway(onEspNowRecv);
       default:
         #ifdef OLED_DISPLAY
           clearDisplay();
@@ -174,14 +164,6 @@ void setup()
       break;
   }
     
-  #ifdef ESP_NOW
-    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
-        {
-          rtcState.missedDataPoint++;
-          goToDeepSleep();
-          DEBUG_PRINTLN("Error connecting to WiFi");
-        }
-  #endif
   
 
   digitalWrite(VOLTAGE_DIV_PIN, LOW);

@@ -15,8 +15,7 @@ enum SensorProfile {
   SensorTHM,
   SensorTHC,
   SensorBMP,
-  SensorBMPTH,
-  Gateway
+  SensorBMPTH
 };
 
 

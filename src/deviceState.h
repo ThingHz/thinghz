@@ -62,7 +62,7 @@ class RunTimeState {
       altitude(INVALID_ALTITUDE_READING),
       seaLevel(INVALID_SEA_READING),
       bmpTemp(INVALID_BMP_TEMP_READING),
-      bmphPa(INVALID_BMP_P_READING)
+      bmphPa(INVALID_BMP_TEMP_READING)
     {
 
     }
