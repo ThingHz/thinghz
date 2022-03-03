@@ -71,58 +71,99 @@ void setup()
   DSB112Init();
   bmp280Init();
 
-  
-  if (!isSHTAvailable())
+  switch (DEVICE_SENSOR_TYPE)
   {
-    DEBUG_PRINTLN("SHT Not connected");
-  }
+    case SensorTH:
+      {
+        if (!isSHTAvailable())
+          {
+            DEBUG_PRINTLN("SHT Not connected");
+          }
 
-  if (readSHT())
-  {
-    DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-    DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
-    #ifdef OLED_DISPLAY
-      //RSTATE.displayEvents = DisplayTempHumid;
-      //drawDisplay(RSTATE.displayEvents);
-    #endif
+        if (readSHT())
+          {
+            DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
+            DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
+            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
+            #ifdef OLED_DISPLAY
+              RSTATE.displayEvents = DisplayTempHumid;
+              drawDisplay(RSTATE.displayEvents);
+            #endif
     
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-    {
-      goToDeepSleep();
-    }
+            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+                {
+                  goToDeepSleep();
+                }
+          }
+      }
+      break;
+    case SensorTemp:
+      {
+        if (readDSB112())
+          {
+            DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
+            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
+            #ifdef OLED_DISPLAY
+              RSTATE.displayEvents = DisplayTemp;
+              drawDisplay(RSTATE.displayEvents);
+            #endif
+            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+              {
+                goToDeepSleep();
+              }
+          }        
+      }
+      break;
+    case SensorBMP:
+      {
+        if(readBMP())
+          {
+            DEBUG_PRINTF("TemperatureBMP:%.1f\n", RSTATE.bmpTemp);
+            DEBUG_PRINTF("Altitude:%.1f\n", RSTATE.altitude);
+            DEBUG_PRINTF("SeaLevel:%.1f\n", RSTATE.seaLevel);
+            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
+            #ifdef OLED_DISPLAY
+              clearDisplay();
+              RSTATE.displayEvents = DisplayTempBMP;
+              drawDisplay(RSTATE.displayEvents);
+            #endif
+            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+              {
+                goToDeepSleep();
+              }
+          }
+      }
+      break;
+    case SensorBMPTH:
+      {
+        if(readBMP() && readSHT())
+          {
+            DEBUG_PRINTF("TemperatureBMP:%.1f\n", RSTATE.bmpTemp);
+            DEBUG_PRINTF("Altitude:%.1f\n", RSTATE.altitude);
+            DEBUG_PRINTF("SeaLevel:%.1f\n", RSTATE.seaLevel);
+            DEBUG_PRINTF("humidity:%.1f\n",RSTATE.humidity);
+            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
+            #ifdef OLED_DISPLAY
+              clearDisplay();
+              RSTATE.displayEvents = DisplayTempHumidBMP;
+              drawDisplay(RSTATE.displayEvents);
+            #endif
+            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+              {
+                goToDeepSleep();
+              }
+          }
+      }
+      break;
+      default:
+        #ifdef OLED_DISPLAY
+          clearDisplay();
+          RSTATE.displayEvents = DisplayNone;
+          drawDisplay(RSTATE.displayEvents);
+        #endif      
+      break;
   }
-
-  if(readBMP()){
-    DEBUG_PRINTF("TemperatureBMP:%.1f\n", RSTATE.bmpTemp);
-    DEBUG_PRINTF("Altitude:%.1f\n", RSTATE.altitude);
-    DEBUG_PRINTF("SeaLevel:%.1f\n", RSTATE.seaLevel);
-    #ifdef OLED_DISPLAY
-      clearDisplay();
-      RSTATE.displayEvents = DisplayTempBMP;
-      drawDisplay(RSTATE.displayEvents);
-    #endif
     
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-    {
-      goToDeepSleep();
-    }
-  }
-
-
-  if (readDSB112())
-  {
-    RSTATE.displayEvents = DisplayTemp;
-    drawDisplay(RSTATE.displayEvents);
-    DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-    if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-    {
-      goToDeepSleep();
-    }
-  }
-  RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
-  clearDisplay();
-  RSTATE.displayEvents = DisplayTempBMP;
-  drawDisplay(RSTATE.displayEvents);
   
   if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
   {

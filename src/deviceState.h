@@ -34,6 +34,7 @@ enum DisplayMode {
   DisplayDeviceConfig,
   DisplayCenterTextLogo,
   DisplayTempBMP,
+  DisplayTempHumidBMP
 };
 
 //advance declaration
@@ -60,7 +61,8 @@ class RunTimeState {
       capacitance(INVALID_CAP_READING),
       altitude(INVALID_ALTITUDE_READING),
       seaLevel(INVALID_SEA_READING),
-      bmpTemp(INVALID_BMP_TEMP_READING)
+      bmpTemp(INVALID_BMP_TEMP_READING),
+      bmphPa(INVALID_BMP_TEMP_READING)
     {
 
     }
@@ -79,6 +81,7 @@ class RunTimeState {
     float altitude;
     float seaLevel;
     float bmpTemp;
+    float bmphPa; 
 };
 
 /**

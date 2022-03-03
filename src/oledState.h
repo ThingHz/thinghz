@@ -6,6 +6,7 @@
 #include <Fonts/FreeSerif9pt7b.h>
 #include <Fonts/FreeSerif12pt7b.h>
 #include <Fonts/FreeSerifBold12pt7b.h>
+#include <Fonts/FreeSerifBold9pt7b.h>
 #include <Fonts/FreeMonoBoldOblique12pt7b.h>
 #include <Fonts/FreeMono9pt7b.h>
 #include "utils.h"
@@ -99,10 +100,10 @@ void drawIp(String annotation){
   }
 
 
-void drawValue(String value,uint16_t cursorPositionY, uint16_t cursorPositionX )
+void drawValue(String value,uint16_t cursorPositionY, uint16_t cursorPositionX, uint8_t textSize)
 {
-  display.setFont(&FreeSerifBold12pt7b);
-  display.setTextSize(1);
+  display.setFont(&FreeSerifBold9pt7b);
+  display.setTextSize(textSize);
   display.setTextColor(WHITE);
   display.setCursor(cursorPositionX, cursorPositionY);
   display.print(value);
@@ -121,42 +122,65 @@ void drawDisplay(DisplayMode mode)
       {
         drawAnotation("Temprature",0,0);
         snprintf(valStr, 20, "%.1f C", RSTATE.temperature);
-        drawValue(valStr,25,0);
+        drawValue(valStr,25,0,1);
         drawLine(30);
         drawAnotation("Humidity",34,0);
         drawAnotation("Battery",34,75);
         snprintf(valStr, 20, "%.1f%c", RSTATE.humidity, 37);
-        drawValue(valStr,58,0);
+        drawValue(valStr,58,0,1);
         snprintf(valStr, 20, "%d%c", RSTATE.batteryPercentage, 37);
-        drawValue(valStr,58,75);
+        drawValue(valStr,58,75,1);
       }
       break;
     case DisplayTempBMP:
       {
-        drawAnotation("Temprature",0,0);
+        drawAnotation("Temp",0,0);
         snprintf(valStr, 20, "%.1fC", RSTATE.bmpTemp);
-        drawValue(valStr,25,0);
-        drawAnotation("Sea Level",0,65);
+        drawValue(valStr,25,0,1);
+        drawAnotation("Sea",0,65);
         snprintf(valStr, 20, "%.1f", RSTATE.seaLevel);
-        drawValue(valStr,25,60);
+        drawValue(valStr,25,65,1);
         drawLine(30);
-        drawAnotation("Altitude",34,0);
+        drawAnotation("Alt",34,0);
         snprintf(valStr, 20, "%.1fm", RSTATE.altitude);
-        drawValue(valStr,58,0);
-        drawAnotation("Battery",34,75);
+        drawValue(valStr,58,0,1);
+        drawAnotation("Bat",34,55);
         snprintf(valStr, 20, "%d%c", RSTATE.batteryPercentage, 37);
-        drawValue(valStr,58,80);
+        drawValue(valStr,58,60,1);
+      }
+      break;
+    case DisplayTempHumidBMP:
+      {
+        drawAnotation("Temp",0,0);
+        snprintf(valStr, 20, "%.1fC", RSTATE.bmpTemp);
+        drawValue(valStr,25,0,1);
+        drawAnotation("Humid",0,65);
+        snprintf(valStr, 20, "%.1f", RSTATE.humidity);
+        drawValue(valStr,25,65,1);
+        drawLine(30);
+        drawAnotation("Alt",34,0);
+        snprintf(valStr, 20, "%.1fm", RSTATE.altitude);
+        drawValue(valStr,58,0,1);
+        drawAnotation("Bat",34,80);
+        snprintf(valStr, 20, "%d%c", RSTATE.batteryPercentage,37);
+        drawValue(valStr,58,80,1);
       }
       break;
     case DisplayTemp:
+      {
         drawAnotation("Temprature",0,0);
         snprintf(valStr, 20, "%.1fC", RSTATE.temperature);
-        drawValue(valStr,30,20);
+        drawValue(valStr,30,20,1);
+        drawLine(30);
+        drawAnotation("Bat",34,0);
+        snprintf(valStr, 20, "%d%c", RSTATE.batteryPercentage, 37);
+        drawValue(valStr,58,0,1);
+      }
       break;
     case DisplayGas:
       drawAnotation("Gas",0,0);
       snprintf(valStr, 20, "%.1f", 34.5);
-      drawValue(valStr,30,20);
+      drawValue(valStr,30,20,1);
       break;
     default:
       display.setTextSize(1);

@@ -125,6 +125,7 @@ bool readBMP()
   RSTATE.altitude = altitude;
   RSTATE.seaLevel = seaLevel;
   RSTATE.bmpTemp = temp;
+  RSTATE.bmphPa = pres; 
   }
 
 

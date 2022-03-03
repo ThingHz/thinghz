@@ -13,7 +13,9 @@ enum SensorProfile {
   SensorGas,
   SensorGyroAccel,
   SensorTHM,
-  SensorTHC
+  SensorTHC,
+  SensorBMP,
+  SensorBMPTH
 };
 
 
@@ -22,7 +24,7 @@ const char* sensorProfileToString(uint8_t sProfile) {
   //Here After and before const means that you can not change pointer as well as data
   static const char* const map[] = {
     "SensorNone", "SensorTemp", "SensorTH", "SensorGas"
-    "SensorGyroAccel", "SensorTHM","SensorTHC"
+    "SensorGyroAccel", "SensorTHM","SensorTHC","SensorBMP","SensorBMPTH"
   };
   return map[sProfile];
 }
