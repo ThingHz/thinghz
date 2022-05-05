@@ -157,6 +157,39 @@ class CloudTalk {
                    RSTATE.batteryPercentage,
                    PAYLOAD_THC.sensorProfile);
           break;
+        case SensorProfile::SensorBMP:
+           DEBUG_PRINTLN("Creating payload for BMP Sensor");
+           PAYLOAD_BMP.bmp_temp = RSTATE.bmpTemp;
+           PAYLOAD_BMP.bmp_altitude = RSTATE.altitude;
+           PAYLOAD_BMP.bmp_pressure = RSTATE.bmphPa;
+           PAYLOAD_BMP.bmp_sea  = RSTATE.seaLevel; 
+           snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"bmpTemp\":\"%.1f\",\"bmpAltitude\":\"%.1f\",\"bmpPressue\":\"%.1f\",\"bmpSea\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
+                   (PSTATE.deviceId).c_str(),
+                   PAYLOAD_BMP.bmp_temp,
+                   PAYLOAD_BMP.bmp_altitude,
+                   PAYLOAD_BMP.bmp_pressure,
+                   PAYLOAD_BMP.bmp_sea,
+                   RSTATE.batteryPercentage,
+                   PAYLOAD_BMP.sensorProfile);
+          break;
+        case SensorProfile::SensorBMPTH:
+           DEBUG_PRINTLN("Creating payload for BMP Sensor");
+           PAYLOAD_TH_BMP.bmp_temp = RSTATE.bmpTemp;
+           PAYLOAD_TH_BMP.bmp_humid = RSTATE.humidity;
+           PAYLOAD_TH_BMP.bmp_altitude = RSTATE.altitude;
+           PAYLOAD_TH_BMP.bmp_pressure = RSTATE.bmphPa;
+           PAYLOAD_TH_BMP.bmp_sea      = RSTATE.seaLevel;
+           snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"bmpTemp\":\"%.1f\",\"humid\":\"%.1f\",\"bmpAltitude\":\"%.1f\",\"bmpPressue\":\"%.1f\",\"bmpSea\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
+                   (PSTATE.deviceId).c_str(),
+                   PAYLOAD_TH_BMP.bmp_temp,
+                   PAYLOAD_TH_BMP.bmp_humid,
+                   PAYLOAD_TH_BMP.bmp_altitude,
+                   PAYLOAD_TH_BMP.bmp_pressure,
+                   PAYLOAD_TH_BMP.bmp_sea,
+                   RSTATE.batteryPercentage,
+                   PAYLOAD_TH_BMP.sensorProfile);
+          break;
+        
         default:
           DEBUG_PRINTLN("Not a valid Sensor");
           break;

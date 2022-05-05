@@ -15,7 +15,8 @@ enum SensorProfile {
   SensorTHM,
   SensorTHC,
   SensorBMP,
-  SensorBMPTH
+  SensorBMPTH,
+  Gateway
 };
 
 
@@ -68,6 +69,33 @@ struct SensorPayloadTHM : public SensorPayloadTH {
   float moisture;
 } __attribute__ ((packed));
 
+struct SensorPayloadBMP : public SensorPayload {
+  SensorPayloadBMP() : 
+    bmp_temp(INVALID_BMP_TEMP_READING),
+    bmp_pressure(INVALID_BMP_P_READING),
+    bmp_sea(INVALID_SEA_READING),
+    bmp_altitude(INVALID_ALTITUDE_READING)
+    {
+      sensorProfile = SensorProfile::SensorBMP;
+    }
+
+    float bmp_temp;
+    float bmp_pressure;
+    float bmp_sea;
+    float bmp_altitude; 
+} __attribute__ ((packed));
+
+
+struct SensorPayloadTHBMP : public SensorPayloadBMP {
+  SensorPayloadTHBMP() : 
+    bmp_humid(INVALID_HUMIDITY_READING)
+    {
+      sensorProfile = SensorProfile::SensorBMPTH;
+    }
+
+    float bmp_humid;
+} __attribute__ ((packed));
+
 struct SensorPayloadGas : public SensorPayload {
   SensorPayloadGas(): gas(INVALID_GAS_READING) {
     sensorProfile = SensorProfile::SensorGas;
@@ -97,18 +125,22 @@ struct SensorPayloadTHC : public SensorPayloadTH {
 SensorPayload           sensorPayload;
 SensorPayloadT          sensorPayloadT;
 SensorPayloadTH         sensorPayloadTH;
+SensorPayloadBMP        sensorPayloadBMP;
+SensorPayloadTHBMP      sensorPayloadTHBMP;      
 SensorPayloadGyroAccel  sensorPayloadGyroAccel;
 SensorPayloadTHM        sensorPayloadTHM;
 SensorPayloadGas        sensorPayloadGas;
 SensorPayloadTHC        sensorPayloadTHC;
 
 
-#define PAYLOAD_NONE   sensorPayload
-#define PAYLOAD_T      sensorPayloadT
-#define PAYLOAD_TH     sensorPayloadTH
-#define PAYLOAD_THM    sensorPayloadTHM
-#define PAYLOAD_GA     sensorPayloadGyroAccel
-#define PAYLOAD_GAS    sensorPayloadGas
-#define PAYLOAD_THC    sensorPayloadTHC
+#define PAYLOAD_NONE    sensorPayload
+#define PAYLOAD_T       sensorPayloadT
+#define PAYLOAD_TH      sensorPayloadTH
+#define PAYLOAD_THM     sensorPayloadTHM
+#define PAYLOAD_GA      sensorPayloadGyroAccel
+#define PAYLOAD_GAS     sensorPayloadGas
+#define PAYLOAD_THC     sensorPayloadTHC
+#define PAYLOAD_TH_BMP  sensorPayloadTHBMP
+#define PAYLOAD_BMP     sensorPayloadBMP
 
 #endif

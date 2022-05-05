@@ -89,11 +89,12 @@ void setup()
               RSTATE.displayEvents = DisplayTempHumid;
               drawDisplay(RSTATE.displayEvents);
             #endif
-    
-            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-                {
-                  goToDeepSleep();
-                }
+            #ifndef ESP_NOW
+              if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+                  {
+                    goToDeepSleep();
+                  }
+            #endif
           }
       }
       break;
@@ -107,10 +108,12 @@ void setup()
               RSTATE.displayEvents = DisplayTemp;
               drawDisplay(RSTATE.displayEvents);
             #endif
-            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-              {
-                goToDeepSleep();
-              }
+            #ifndef ESP_NOW
+              if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
+                  {
+                    goToDeepSleep();
+                  }
+            #endif
           }        
       }
       break;
@@ -127,10 +130,13 @@ void setup()
               RSTATE.displayEvents = DisplayTempBMP;
               drawDisplay(RSTATE.displayEvents);
             #endif
+            
+            #ifndef ESP_NOW
             if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
               {
                 goToDeepSleep();
               }
+            #endif
           }
       }
       break;
@@ -148,13 +154,17 @@ void setup()
               RSTATE.displayEvents = DisplayTempHumidBMP;
               drawDisplay(RSTATE.displayEvents);
             #endif
+            #ifndef ESP_NOW
             if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
               {
                 goToDeepSleep();
               }
+            #endif
           }
       }
       break;
+      case Gateway:
+        switchToESPNowGateway(onEspNowRecv);
       default:
         #ifdef OLED_DISPLAY
           clearDisplay();
@@ -164,13 +174,15 @@ void setup()
       break;
   }
     
+  #ifdef ESP_NOW
+    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+        {
+          rtcState.missedDataPoint++;
+          goToDeepSleep();
+          DEBUG_PRINTLN("Error connecting to WiFi");
+        }
+  #endif
   
-  if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
-  {
-    rtcState.missedDataPoint++;
-    goToDeepSleep();
-    DEBUG_PRINTLN("Error connecting to WiFi");
-  }
 
   digitalWrite(VOLTAGE_DIV_PIN, LOW);
 
@@ -199,12 +211,49 @@ void loop()
   }
 }
 
+
+void onEspNowRecv(u8 *mac_add, u8 *data, u8 data_len)
+{
+  DEBUG_PRINTLN("Received message from espnow node");
+
+  if (data_len < sizeof(SensorPayloadTemp)) {
+    DEBUG_PRINTLN("Bad data from espnow");
+    return;
+  }
+
+  DEBUG_PRINTF("mac Address %s", convertToStringWithoutColons(mac_add).c_str());
+  DEBUG_PRINTF("size of incoming data is : %d, and size of struct is %d \n",  data_len, sizeof(SensorPayloadTemp));
+
+  SensorPayloadTemp *payload = (SensorPayloadTemp*) data;
+
+  DEBUG_PRINTF("battery Percentage %d",payload->batteryPercentage);
+  DEBUG_PRINTF("Temperatue%.1f",payload->temperature);
+  DEBUG_PRINTF("SensorProfile%d",payload->sensorProfile);
+  
+  
+  // check if it is a valid packet from our nfodes, it has to have our magic
+  if (payload->magic != ESPNOW_NODEPACKET_MAGIC) {
+    DEBUG_PRINTLN("magic byte invalid");
+    return;
+  }
+
+  if (payload->sensorProfile == FWRequestPayload) {
+    DEBUG_PRINTLN("Processing fw request");
+    processNodeUpdateRequest(mac_add, payload);
+    return;
+  }
+
+  deviceState.enqueSensorPayload(convertToStringWithoutColons(mac_add).c_str(), payload,timeClient);
+}
+
 void blinkLed()
 {
   digitalWrite(SIG_PIN, HIGH);
   delay(500);
   digitalWrite(SIG_PIN, LOW);
 }
+
+
 
 bool checkAlarm(uint8_t sProfile)
 {

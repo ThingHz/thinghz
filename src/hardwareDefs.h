@@ -34,6 +34,7 @@ String formApSsidName(String deviceId) {
    @todo: We need to do this part later
 */
 #define ESP_NOW      1
+#define ESPNOW_CHANNEL                          1
 
 //Comment out to disable display
 #define OLED_DISPLAY 1
@@ -48,7 +49,7 @@ String formApSsidName(String deviceId) {
 // hardware identifier and rev
 #define DEVICE_TYPE         ThingHz_Standalone
 
-#define DEVICE_SENSOR_TYPE  SensorBMPTH
+#define DEVICE_SENSOR_TYPE  SensorTH
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
 #define HW_REV                          1 // poc using esp 12e/esp32, no lte modem
 
@@ -73,7 +74,7 @@ String formApSsidName(String deviceId) {
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
 #define SECS_MULTIPLIER_DEEPSLEEP               900 //900
-#define SECS_PORTAL_WAIT                        120 //120
+#define SECS_PORTAL_WAIT                        60 //120
 #define HTTP_CONNEC_TIMEOUT_IN_MS               100
 
 #define EEPROM_STORE_SIZE                       512
@@ -102,13 +103,14 @@ String formApSsidName(String deviceId) {
 #define INVALID_ALTITUDE_READING   -1
 #define INVALID_SEA_READING        -1
 #define INVALID_BMP_TEMP_READING    99
+#define INVALID_BMP_P_READING      -1
 
 #define MINIMUM_DEBOUNCE_TIME         250
 #define MIN_TARGET_TEMP               4
 #define MAX_TARGET_TEMP               20
 #define MIN_TARGET_HUMID              20
 #define MAX_TARGET_HUMID              60
-#define MAX_WAKEUP_COUNT              1
+#define MAX_WAKEUP_COUNT              2
 #define MIN_WAKEUP_COUNT              0
 #define CALIBRATION_LEVEL             0
 

@@ -58,15 +58,71 @@ bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
   return connectSuccess;
 }
 
+
+String getLast3ByteMac(uint8_t* mac, bool fullSizeMac){
+  char macStr[9] = { 0 };
+  WiFi.macAddress(mac);
+  if(!fullSizeMac){
+    sprintf(macStr, "%02X%02X%02X", mac[3], mac[4], mac[5]);
+  }else{
+    sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2],mac[3], mac[4], mac[5]);
+  }
+  return String(macStr);
+}
+
+bool configESPDeviceAP() {
+  //FIXME:: these two can also fail, check for errors
+  WiFi.disconnect();
+  WiFi.mode(WIFI_AP_STA);
+
+  DEBUG_PRINTLN("Confuring Device AP");
+  String Prefix = "Gateway-";
+  uint8_t mac[6];
+  String macStr = getLast3ByteMac(mac,false);
+  String SSID = Prefix + macStr;
+  String Password = "Ag2782$#"; // no one is going to connect to it, but sound password is good.
+  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), ESPNOW_CHANNEL, 0);
+  if (!result) {
+    DEBUG_PRINTLN("AP Config failed.");
+    return false;
+  }
+
+  DEBUG_PRINTLN("AP Config Success. Broadcasting with AP: " + String(SSID));
+
+  return true;
+}
+
+
+bool switchToESPNowGateway(esp_now_recv_cb_t espNowRecvCB)
+{
+  // todo :: we need to swtich to espnow only if not already setup otherwise just return
+  configESPDeviceAP();
+  int ESPNow_err = ESPNow.init();
+  if (ESPNow_err != ESP_OK) {
+    DEBUG_PRINTLN("ESPNow Init failed");
+    return false;
+  } else {
+    DEBUG_PRINTLN(ESPNow_err);
+  }
+
+  if (ESPNow.reg_recv_cb(espNowRecvCB) != ESP_OK ) {
+    DEBUG_PRINTLN("ESP callback register failed");
+    return false;
+  }
+  return true;
+}
+
 bool APConnection(const String& APssid) {
   WiFi.disconnect();
+  uint8_t mac[6];
+  String macStr = getLast3ByteMac(mac,false);
   if (WiFi.softAPgetStationNum() > 0 && PSTATE.isOtaAvailable == 0) {
     DEBUG_PRINTLN("Station Connected to SoftAP, keeping soft AP alive");
     RSTATE.isAPActive = true;
     return true;
   }
   WiFi.mode(WIFI_AP);
-  if (!WiFi.softAP(APssid.c_str())) {
+  if (!WiFi.softAP((APssid+macStr).c_str())) {
     return false;
   }
   delay(100);
