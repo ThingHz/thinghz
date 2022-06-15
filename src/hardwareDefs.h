@@ -33,8 +33,8 @@ String formApSsidName(String deviceId) {
 /**
    @todo: We need to do this part later
 */
-#define ESP_NOW      1
-#define ESPNOW_CHANNEL                          1
+//#define ESP_NOW      1
+//#define ESPNOW_CHANNEL                          1
 
 //Comment out to disable display
 #define OLED_DISPLAY 1

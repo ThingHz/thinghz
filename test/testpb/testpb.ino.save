@@ -1,0 +1,46 @@
+#include "test.pb.h"
+
+#include "pb_common.h"
+#include "pb.h"
+#include "pb_encode.h"
+
+ 
+void setup(){
+    Serial.begin(115200);
+    uint8_t buffer[128];
+
+    sensorT sensor_T_message = sensorT_init_zero;
+
+    Serial.println(sizeof(sensor_T_message));
+
+    pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+
+    sensor_T_message.sensorProfile = 1;
+    sensor_T_message.has_hwRev = true;
+    sensor_T_message.has_fwRev = true;
+    sensor_T_message.has_deviceType = true;
+    sensor_T_message.has_batteryPercentage = true;
+    sensor_T_message.hwRev = 2;
+    sensor_T_message.fwRev = 2;
+    sensor_T_message.deviceType = 2;
+    sensor_T_message.batteryPercentage = 42;
+    sensor_T_message.temp = 24.3;
+    
+    bool status = pb_encode(&stream, sensorT_fields, &sensor_T_message);
+     if (!status)
+  {
+      Serial.println("Failed to encode");
+      return;
+  }
+    Serial.print("Message Length: ");
+    Serial.println(stream.bytes_written);
+
+    Serial.print("Message: ");
+ 
+    for(int i = 0; i<stream.bytes_written; i++){
+      Serial.printf("%02X",buffer[i]);
+  }
+  }
+
+  void loop(){
+    }

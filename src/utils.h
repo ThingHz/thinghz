@@ -152,4 +152,16 @@ bool isFileExistInSpiff(String fileName){
     return false;
 }
 
+String protobufPayloadToString(uint8_t *protoBuf, int protoSize)
+{
+  
+  char protobufStr[128] = { 0 };
+  for(int i = 0; i<protoSize; i++){
+      char buf[1] = {0};
+      sprintf(buf, "%02X", protoBuf[i]);
+      strcat(protobufStr,buf);
+  }
+  return String(protobufStr);
+}
+
 #endif

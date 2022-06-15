@@ -9,7 +9,15 @@
 #include "hardwareDefs.h"
 #include "utils.h"
 #include "SensorPayload.h"
-#define JSON_MSG_MAX_LEN          512
+#include "test.pb.h"
+#include "pb_common.h"
+#include "pb.h"
+#include "pb_encode.h"
+#include <AWS_IOT.h>
+#include <PubSubClient.h>
+
+#define JSON_MSG_MAX_LEN          128
+AWS_IOT aws_iot;
 
 DynamicJsonDocument jsonDocument(1024);
 
@@ -17,6 +25,9 @@ DynamicJsonDocument jsonDocument(1024);
 //const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data";
 const char urlmessageSend[] = "https://api.thinghz.com/v1/data";
 const char urlOtaSend[]     = "https://api.thinghz.com/v1/data/download-file?filename=%s"; //URL for ota file download
+char HOST_ADDRESS[]="a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com";
+char CLIENT_ID[]= "thinghz1234";
+char TOPIC_NAME[]= "thinghz";
 
 // payload structure for OTA result update to cloud
 const char COOLNEXT_OTA_BODY[] = "{\"deviceId\":\"%s\",\"firmwareVersion\":\"%s\"}";
@@ -43,12 +54,14 @@ class CloudTalk {
     {
       String retJson;
       int httpCode;
-      HTTPClient http;
-      http.begin(urlmessageSend);//zx     //test
-      http.addHeader("Content-Type" , "application/json");  //Specify content-type header
-      String messagePayload = createPayload(DEVICE_SENSOR_TYPE);
-      DEBUG_PRINTLN(messagePayload);
-      httpCode = http.POST(messagePayload);     //Send the request
+      reconnectMQTT();
+      String messagePayload = createProtobufPayload(DEVICE_SENSOR_TYPE);
+      if(hornbill.publish(TOPIC_NAME,payload) == 0)
+        {        
+            Serial.print("Publish Message:");
+            Serial.println(payload);
+        }
+      /*httpCode = http.POST(messagePayload);     //Send the request
       yield();
       if (httpCode == HTTP_CODE_OK && httpCode > 0) {
         retJson = http.getString();   //Get the response payload
@@ -57,7 +70,7 @@ class CloudTalk {
         DEBUG_PRINTF("[HTTP] GET... failed, error: %s and code is %d\n", http.errorToString(httpCode).c_str(), httpCode);
         return false;
       }
-      http.end();
+      http.end();*/
 
       FWInfo fwInfo = extractFWVersion(retJson);
 
@@ -81,13 +94,38 @@ class CloudTalk {
       return true;
     }
 
+    void reconnectMQTT(){
+  
+    if(aws_iot.connect(HOST_ADDRESS,CLIENT_ID)== 0)
+    {
+        Serial.println("Connected to AWS");
+        /*delay(1000);
+        if(0==hornbill.subscribe(TOPIC_NAME,mySubCallBackHandler))
+        {
+            Serial.println("Subscribe Successfull");
+        }
+        else
+        {
+            Serial.println("Subscribe Failed, Check the Thing Name and Certificates");
+            while(1);
+        }
+    }
+    else
+    {
+        Serial.println("AWS connection failed, Check the HOST Address");
+        while(1);
+    }*/
+
+    delay(2000);
+  }
+
  /**
        @brief: Create message payload
        @param: Sensor profile of sesnor type
        @return: message payload array
     */
 
-    String createPayload(uint8_t sProfile) {
+    /*String createPayload(uint8_t sProfile) {
       char messageCreatePayload[JSON_MSG_MAX_LEN];
       switch (sProfile) {
         case SensorProfile::SensorNone :
@@ -195,8 +233,223 @@ class CloudTalk {
           break;
       }
       return String(messageCreatePayload);
-    }
+    }*/
 
+    /**
+       @brief: Create message Protobuf payload
+       @param: Sensor profile of sesnor type
+       @return: protobuf message json  
+    */
+
+    String createProtobufPayload(uint8_t sProfile) {
+      char messageProtoPayload[JSON_MSG_MAX_LEN];
+      uint8_t buffer[128];
+      switch (sProfile) {
+        case SensorProfile::SensorNone :
+          DEBUG_PRINTLN("NO Sensor Found");
+          break;
+        case SensorProfile::SensorTemp :
+          sensorT sensor_T_message = sensorT_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_T_message.sensorProfile = sProfile;
+          sensor_T_message.has_hwRev = true;
+          sensor_T_message.has_fwRev = true;
+          sensor_T_message.has_deviceType = true;
+          sensor_T_message.has_batteryPercentage = true;
+          sensor_T_message.hwRev = HW_REV;
+          sensor_T_message.fwRev = FW_REV;
+          sensor_T_message.deviceType = ThingHz_Standalone;
+          sensor_T_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_T_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorT_fields, &sensor_T_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"msg\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorTH :
+          sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorTHM :
+          sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorGas :
+          sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorGyroAccel :
+          sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorTHC:
+           sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorBMP:
+           sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        case SensorProfile::SensorBMPTH:
+          sensorTH sensor_TH_message = sensorTH_init_zero;
+          pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+          sensor_TH_message.sensorProfile = sProfile;
+          sensor_TH_message.has_hwRev = true;
+          sensor_TH_message.has_fwRev = true;
+          sensor_TH_message.has_deviceType = true;
+          sensor_TH_message.has_batteryPercentage = true;
+          sensor_TH_message.hwRev = HW_REV;
+          sensor_TH_message.fwRev = FW_REV;
+          sensor_TH_message.deviceType = ThingHz_Standalone;
+          sensor_TH_message.batteryPercentage = RSTATE.batteryPercentage;
+          sensor_TH_message.temp = RSTATE.temperature;
+          DEBUG_PRINTLN("Creating payload for Temp Sensor");
+          bool status = pb_encode(&stream, sensorTH_fields, &sensor_TH_message);
+          String protobufStr;
+          for(int i = 0; i<stream.bytes_written; i++){
+                char buf[2];
+                sprintf(buf,"%02X",buffer[i]);
+                protobufStr+=String(buf);
+          }
+          snprintf(messageProtoPayload, JSON_MSG_MAX_LEN, "{\"device_id\":%s}",protobufStr);
+          DEBUG_PRINTLN(messageProtoPayload);
+          break;
+        
+        default:
+          DEBUG_PRINTLN("Not a valid Sensor");
+          break;
+      }
+      return String(messageProtoPayload);
+    }
+    
+
+    
     /**
        @brief: update the ota version during successful update
        @return: true if everything happened as expected
