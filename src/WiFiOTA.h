@@ -93,7 +93,7 @@ bool configESPDeviceAP() {
 }
 
 
-bool switchToESPNowGateway(esp_now_recv_cb_t espNowRecvCB)
+/*bool switchToESPNowGateway(esp_now_recv_cb_t espNowRecvCB)
 {
   // todo :: we need to swtich to espnow only if not already setup otherwise just return
   configESPDeviceAP();
@@ -110,7 +110,7 @@ bool switchToESPNowGateway(esp_now_recv_cb_t espNowRecvCB)
     return false;
   }
   return true;
-}
+}*/
 
 bool APConnection(const String& APssid) {
   WiFi.disconnect();

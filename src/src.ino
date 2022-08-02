@@ -193,41 +193,6 @@ void loop()
   }
 }
 
-
-void onEspNowRecv(u8 *mac_add, u8 *data, u8 data_len)
-{
-  DEBUG_PRINTLN("Received message from espnow node");
-
-  if (data_len < sizeof(SensorPayloadTemp)) {
-    DEBUG_PRINTLN("Bad data from espnow");
-    return;
-  }
-
-  DEBUG_PRINTF("mac Address %s", convertToStringWithoutColons(mac_add).c_str());
-  DEBUG_PRINTF("size of incoming data is : %d, and size of struct is %d \n",  data_len, sizeof(SensorPayloadTemp));
-
-  SensorPayloadTemp *payload = (SensorPayloadTemp*) data;
-
-  DEBUG_PRINTF("battery Percentage %d",payload->batteryPercentage);
-  DEBUG_PRINTF("Temperatue%.1f",payload->temperature);
-  DEBUG_PRINTF("SensorProfile%d",payload->sensorProfile);
-  
-  
-  // check if it is a valid packet from our nfodes, it has to have our magic
-  if (payload->magic != ESPNOW_NODEPACKET_MAGIC) {
-    DEBUG_PRINTLN("magic byte invalid");
-    return;
-  }
-
-  if (payload->sensorProfile == FWRequestPayload) {
-    DEBUG_PRINTLN("Processing fw request");
-    processNodeUpdateRequest(mac_add, payload);
-    return;
-  }
-
-  deviceState.enqueSensorPayload(convertToStringWithoutColons(mac_add).c_str(), payload,timeClient);
-}
-
 void blinkLed()
 {
   digitalWrite(SIG_PIN, HIGH);
