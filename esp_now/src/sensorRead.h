@@ -43,21 +43,27 @@ bool isCCSAvailable()
   return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_CCSFaulty);
 }
 
-bool readCCS(){
+bool warmCCS(){
     unsigned long startTime;
     startTime = millis();
     while(!ccs.available()&&millis()-startTime < CCS_WARM_DURATION);
     if(!ccs.available()){
         return false;
         DEBUG_PRINTLN("CCS not available");
-    } 
-     if(!ccs.readData()){
-        uint16_t co2Value = ccs.geteCO2();
-        DEBUG_PRINTF("Co2 value %u\n", (unsigned)co2Value);
-        RSTATE.co2 = co2Value; 
-        }
-    return true;
     }
+    return true; 
+}
+
+void readCCS(){
+  unsigned long startTime;
+  startTime = millis();
+  while(millis()-startTime < CCS_READ_DURATION){
+     if(!ccs.readData()){
+        RSTATE.co2 = ccs.geteCO2();
+        delay(100);
+       }
+  }    
+}
     
 
 

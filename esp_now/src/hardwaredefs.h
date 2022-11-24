@@ -45,7 +45,8 @@ String formApSsidName(String deviceId) {
 // configuration
 #define CAPTIVE_MAX_CLIENT_CONFIG_DURATION      60 //max time for captive client configuration
 #define SECS_MULTIPLIER_DEEPSLEEP               900 //900
-#define CCS_WARM_DURATION                       6000
+#define CCS_WARM_DURATION                       10000
+#define CCS_READ_DURATION                       5000
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
 #define EEPROM_STORE_SIZE                       512

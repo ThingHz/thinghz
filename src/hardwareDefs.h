@@ -3,12 +3,8 @@
 
 
 enum DeviceType {
-  ThingHz_Standalone = 1,                // Sensor Node will work as a standalone device and talks to cloud
-  ThingHz_EspNow_Node,                   // Sensor Node will talk back and forth with the Gateway using ESPNow
-  ThingHz_EspNow_WiFiLteHaul_Gateway,    // gateway is powered device that comMunicate with Sensor Nodes using ESPNOw Protocol and post the data to cloud
-  ThingHz_CC1100_Node,                   // Sensor Node will talk back and forth with the Gateway using CC1100
-  ThingHz_CC1100_WiFiLTEHaul_Gateway,    // gateway is powered device that communicate with Sensor Nodes using CC1100 and post the data to cloud
-  DeviceTypeUnknown = 5000
+    DT_Gateway        = 1,
+    DT_Node        
 };
 
 // used to convert enum to strings for sending to could in http requests or printing in debug messages
@@ -30,10 +26,8 @@ String formApSsidName(String deviceId) {
 
 #define DEBUG_SERIAL 1 // should come from build system
 
-/**
-   @todo: We need to do this part later
-*/
-#define ESP_NOW      1
+//ESP NOW configuration
+#define ESP_NOW                                 1
 #define ESPNOW_CHANNEL                          1
 
 //Comment out to disable display
@@ -81,7 +75,7 @@ String formApSsidName(String deviceId) {
 
 #define WAN_WIFI_SSID_DEFAULT                    "Sarthak"
 #define WAN_WIFI_PASS_DEFAULT                    "wireless18"
-#define DEVICE_ID_DEFAULT                        "THING00001"
+#define DEVICE_ID_DEFAULT                        "00:00"
 
 
 

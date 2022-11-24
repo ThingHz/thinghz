@@ -13,7 +13,8 @@ class RunTimeState {
       temperature(INVALID_TEMP_READING),
       humidity(INVALID_HUMIDITY_READING),
       co2(INVALID_GAS_READING),
-      deviceEvents(DeviceStateEvent::DSE_None)
+      deviceEvents(DeviceStateEvent::DSE_None),
+      isCO2Available(false)
     {
 
     }
@@ -26,7 +27,7 @@ class RunTimeState {
     float humidity;
     uint16_t co2;
     uint deviceEvents;
-     
+    bool isCO2Available; 
 };
 
 RunTimeState RSTATE;

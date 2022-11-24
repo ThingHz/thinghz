@@ -3,32 +3,10 @@
 
 #include <EEPROM.h>
 #include "hardwareDefs.h"
+#include "LinkedList.h" // arduino library by evan seidel
+#include "SensorPayload.h"
 
-/**
-   @brief:
-   Device State Enum
-*/
-enum DeviceStateEvent {
-    DSE_None            = 0,
-    DSE_Charging        = 1,
-    DSE_BatLow          = 1 << 1,
-    DSE_SHTFaulty       = 1 << 2,
-    DSE_CCSFaulty       = 1 << 3,
-    DSE_DSBFaulty       = 1 << 4,
-    DSE_DisplayFault    = 1 << 5,  
-};
 
-enum DisplayMode {
-  DisplayNone,
-  DisplayTemp,
-  DisplayTempHumid,
-  DisplayGas,
-  DisplayCap,
-  DisplayDeviceConfig,
-  DisplayCenterTextLogo,
-  DisplayTempBMP,
-  DisplayTempHumidBMP
-};
 
 //advance declaration
 class PersistantStateStorageFormat;
@@ -48,14 +26,7 @@ class RunTimeState {
       isPortalActive(false),
       startPortal(0),
       macAddr(DEVICE_ID_DEFAULT),
-      batteryPercentage(BATT_VOL_100),
-      temperature(INVALID_TEMP_READING),
-      humidity(INVALID_HUMIDITY_READING),
-      capacitance(INVALID_CAP_READING),
-      altitude(INVALID_ALTITUDE_READING),
-      seaLevel(INVALID_SEA_READING),
-      bmpTemp(INVALID_BMP_TEMP_READING),
-      bmphPa(INVALID_BMP_TEMP_READING)
+      batteryPercentage(BATT_VOL_100)
     {
 
     }
@@ -67,14 +38,7 @@ class RunTimeState {
     bool isPortalActive;
     unsigned long startPortal;
     String macAddr;
-    int batteryPercentage;
-    float temperature;
-    float humidity;
-    float capacitance;
-    float altitude;
-    float seaLevel;
-    float bmpTemp;
-    float bmphPa; 
+    int batteryPercentage; 
 };
 
 /**
@@ -86,14 +50,9 @@ class PersistantState {
   public:
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
       apPass(WAN_WIFI_PASS_DEFAULT),
-      deviceId(DEVICE_ID_DEFAULT),
-      targetTempMin(MIN_TARGET_TEMP),
-      targetHumidityMin(MIN_TARGET_HUMID),
-      targetTempMax(MAX_TARGET_TEMP),
-      targetHumidityMax(MAX_TARGET_HUMID),
-      tempCalibration(CALIBRATION_LEVEL),
       isOtaAvailable(0),
-      newfWVersion(0)
+      newfWVersion(0),
+      dataSendPeriodicitySecs(SECS_PORTAL_WAIT)
     {
 
     }
@@ -103,26 +62,16 @@ class PersistantState {
     bool operator==(const PersistantState& rhs) {
       return ((apSSID == rhs.apSSID) &&
               (apPass == rhs.apPass) &&
-              (deviceId == rhs.deviceId) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
               (newfWVersion == rhs.newfWVersion) &&
-              (targetTempMin == rhs.targetTempMin) &&
-              (targetHumidityMin == rhs.targetHumidityMin) &&
-              (targetTempMax == rhs.targetTempMax) &&
-              (targetHumidityMax == rhs.targetHumidityMax) &&
-              (tempCalibration == rhs.tempCalibration));
+              (dataSendPeriodicitySecs == rhs.dataSendPeriodicitySecs));
     }
     // public data members
     String apSSID;
     String apPass;
-    String deviceId;
-    int targetTempMin;
-    int targetHumidityMin;
-    int targetTempMax;
-    int targetHumidityMax;
-    int tempCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
+    uint16_t dataSendPeriodicitySecs;
    
 };
 
@@ -140,13 +89,8 @@ struct PersistantStateStorageFormat {
     PersistantStateStorageFormat(const PersistantState &persistantState);
     char version[8];
     char apSSID[30];
-    char deviceId[30];
     char apPass[30];
-    int setTempMin;
-    int setHumidityMin;
-    int setTempMax;
-    int setHumidityMax;
-    int tempCalibration;
+    uint16_t dataSendPeriodicitySecs;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
 } __attribute__ ((packed));
@@ -155,14 +99,9 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
 {
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
-  deviceId = String(persistantStore.deviceId);
-  targetTempMin = persistantStore.setTempMin ;
-  targetHumidityMin = persistantStore.setHumidityMin;
-  targetTempMax = persistantStore.setTempMax;
-  targetHumidityMax = persistantStore.setHumidityMax;
-  tempCalibration = persistantStore.tempCalibration;
   isOtaAvailable = persistantStore.isOtaAvailable;
   newfWVersion = persistantStore.newfWVersion;
+  dataSendPeriodicitySecs = persistantStore.dataSendPeriodicitySecs;
 }
 
 PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState &persistantState)
@@ -170,12 +109,7 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   strcpy(version, EEPROM_STORAGE_FORMAT_VERSION);
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
-  strcpy(deviceId, persistantState.deviceId.c_str());
-  setTempMin = persistantState.targetTempMin;
-  setHumidityMin = persistantState.targetHumidityMin;
-  setTempMax = persistantState.targetTempMax;
-  setHumidityMax = persistantState.targetHumidityMax;
-  tempCalibration = persistantState.tempCalibration;
+  dataSendPeriodicitySecs = persistantState.dataSendPeriodicitySecs;
   isOtaAvailable = persistantState.isOtaAvailable;
   newfWVersion = persistantState.newfWVersion;
 }
@@ -188,10 +122,37 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
 */
 typedef struct {
   int isEscalation;
-  int missedDataPoint;
+  int missedDataPointsCounter;
   int wakeUpCount;
+  int wifiConnFailureCounter;
 } RTCState;
 RTC_DATA_ATTR RTCState rtcState;
+
+/**
+   @brief:
+   Payload Queue element copy the payload object to the respective payload depending on sensor profile
+*/
+class PayloadQueueElement
+{
+  public:
+    // this will keep a copy of sensor payload, the ptr doens't have to be valid after the call
+    PayloadQueueElement(const char *mac, SensorPayload *payload)
+    {
+      _mac = strdup(mac);
+      _payload = copyPayloadObject(payload);
+    }
+    ~PayloadQueueElement()
+    {
+      freePayloadObject(_payload);
+      _payload = nullptr;
+      free(_mac);
+      _mac = nullptr;
+    }
+
+    char * _mac;
+    SensorPayload* _payload;
+};
+
 
 class DeviceState
 {
@@ -199,8 +160,8 @@ class DeviceState
     // public data members
     RunTimeState        runTimeState;
     PersistantState     persistantState;
-
-
+    SensorPayloadTHCO2    telemetry;
+    LinkedLists<PayloadQueueElement*> telemetryQueue;
     DeviceState() {
       /**
          @todo:There was a problem in begining it here
@@ -209,6 +170,34 @@ class DeviceState
     }
     ~DeviceState() {
       EEPROM.end();
+    }
+
+    void enqueSensorPayload(const char *mac, SensorPayload *payload)
+    { 
+        
+      if (!mac || !payload) {
+        DEBUG_PRINTLN("invalid data in payload");
+        return;
+      }
+
+      DEBUG_PRINTLN("Allocating new queue element");
+      PayloadQueueElement * telemetryElement = new PayloadQueueElement(mac, payload);
+      DEBUG_PRINTF("batteryPercentage:%d\n", payload->batteryPercentage);
+      if (!telemetryElement->_payload) {
+        DEBUG_PRINTF("copy of payload had failed, not queuing\n");
+        delete telemetryElement;
+        return;
+      }
+      
+      telemetryQueue.add(telemetryElement);
+    }
+
+    
+    /**
+       @brief:Checks for unprocessed telementry in linkedlist
+    */
+    bool hasUnprocessedTelemetry() {
+      return ( telemetryQueue.size() != 0 );
     }
 
     /**
@@ -236,6 +225,7 @@ class DeviceState
       return retValue;
     }
 
+  
   private:
     PersistantState eepromRealState;
 
@@ -270,6 +260,8 @@ class DeviceState
     {
       return true;
     }
+
+
 
 };
 

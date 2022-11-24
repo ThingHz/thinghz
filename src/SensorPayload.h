@@ -11,11 +11,6 @@ enum SensorProfile {
   SensorTemp,
   SensorTH,
   SensorGas,
-  SensorGyroAccel,
-  SensorTHM,
-  SensorTHC,
-  SensorBMP,
-  SensorBMPTH
 };
 
 
@@ -31,15 +26,15 @@ const char* sensorProfileToString(uint8_t sProfile) {
 
 struct SensorPayload {
   public:
-    SensorPayload(): sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), deviceType(DEVICE_TYPE),
-      batteryPercentage(BATTERY_INITIAL_READING) {
-    }
-
-    uint8_t sensorProfile;
-    uint8_t hwRev;
-    uint8_t fwRev;
-    uint8_t deviceType;
-    uint8_t batteryPercentage;
+    SensorPayload() :  sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), deviceType(DeviceType::DT_Node),
+        rssi(0), batteryPercentage(0),deviceEvent(DeviceStateEvent::DSE_None){ }
+    uint8_t sensorProfile;           // identifies sensor profile
+    uint8_t hwRev;                  // identifies hw revision
+    uint8_t fwRev;                 // identifies fw revision
+    uint8_t deviceType;           // identifies device type
+    int  rssi;                 // rssi of gateway
+    uint8_t batteryPercentage;  //batteryPercentage of nodes
+    uint deviceEvent;
 } __attribute__ ((packed));
 
 //Inherit properties of Sensor payload in other Sensor structure accoarding to Sensor Profile

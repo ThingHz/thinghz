@@ -24,10 +24,13 @@ typedef struct {
     int8_t rssi[3]                   = {0};
 } RTCState;
 
+uint8_t remoteMac[] = {0x9c, 0x9c, 0x1f, 0x1d, 0x2b, 0x19};
 
 ESPCaptivePortal captivePortal;
-RTCState rtcState;
+RTC_DATA_ATTR RTCState rtcState;
 esp_now_peer_info_t slave;
+const esp_now_peer_info_t *peer = &slave;
+TaskHandle_t xHandle;
 /**
    @brief:
    Class for ESPnow data handling
@@ -56,7 +59,7 @@ SensorPayloadTH   SensorTempHumid;
 SensorPayloadTHCO2 SensorTHG;
 
 
-int sendStatusCB = 1;
+int sendStatusCB = 0;
 uint8_t invalidMac[MAC_LEN] = { 0 };
 
 uint8_t successfulMAC[MAC_LEN];
@@ -113,16 +116,17 @@ bool scanPeeers(){
         String bssid = WiFi.BSSIDstr(i);
         if(ssid.indexOf("Gateway-")>=0) {
             rtcState.rssi[i] = WiFi.RSSI(i);
-            DEBUG_PRINTF("Gateway info : index=%d, ssid = %s, rssi = %s, bssid = %s\n", i, ssid.c_str(), rtcState.rssi[i], bssid.c_str());
+            //DEBUG_PRINTF("Gateway info : index=%d, ssid = %s, rssi = %s, bssid = %s\n", i, ssid.c_str(), rtcState.rssi[i], bssid.c_str());
             memcpy(rtcState.gatewaymacs[i], WiFi.BSSID(i), 6);
             rtcState.gatewayValidCount++;
             DEBUG_PRINTLN("rtcState.gatewayValidCount++");
-            int mac[6];
+            printmac(rtcState.gatewaymacs[i]);
+            /*int mac[6];
             if ( 6 == sscanf(bssid.c_str(), "%x:%x:%x:%x:%x:%x",  &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5] ) ) {
                 for (int j = 0; j < 6; ++j ) {
                 slave.peer_addr[j] = (uint8_t) mac[j];
             }
-          }
+          }*/
           slave.channel = ESPNOW_CHANNEL; // pick a channel
           slave.encrypt = 0; // no encryption
         }
@@ -131,56 +135,37 @@ bool scanPeeers(){
     if (rtcState.gatewayValidCount == 0) {
         DEBUG_PRINTLN("No gatewayNotFoundCount Found, trying again.");
         rtcState.gatewayNotFoundCount++;
-    }
+    }else{
+        rtcState.gatewayNotFoundCount = 0;
+      }
 
     // clean up ram
     WiFi.scanDelete();
 }
 
 
+void configureSlave(){
+    memcpy( &slave.peer_addr, &remoteMac, 6 );
+     slave.channel = ESPNOW_CHANNEL; // pick a channel
+     slave.encrypt = 0; // no encryption
+  }
+
 
 //Step 3 Scan for the available peers
 bool addPeers(){
     DEBUG_PRINTLN("Add Peers Started ");
-    
 
-    if(rtcState.gatewayValidCount<=0){
-        DEBUG_PRINTLN("No Slave found to process");
-        return false;
-    }
-
-    bool exists = esp_now_is_peer_exist(slave.peer_addr);
+        /*int exists = esp_now_is_peer_exist(rtcState.gatewaymacs[i]);    
 
         if (exists) {
             // Slave already paired.
             DEBUG_PRINTLN("Already Paired");
-            return true;
-        }else{
-            esp_err_t addStatus = esp_now_add_peer(&slave);
-      if (addStatus == ESP_OK) {
-        // Pair success
-        Serial.println("Pair success");
-        return true;
-      } else if (addStatus == ESP_ERR_ESPNOW_NOT_INIT) {
-        // How did we get so far!!
-        Serial.println("ESPNOW Not Init");
-        return false;
-      } else if (addStatus == ESP_ERR_ESPNOW_ARG) {
-        Serial.println("Invalid Argument");
-        return false;
-      } else if (addStatus == ESP_ERR_ESPNOW_FULL) {
-        Serial.println("Peer list full");
-        return false;
-      } else if (addStatus == ESP_ERR_ESPNOW_NO_MEM) {
-        Serial.println("Out of memory");
-        return false;
-      } else if (addStatus == ESP_ERR_ESPNOW_EXIST) {
-        Serial.println("Peer Exists");
-        return true;
-      } else {
-        Serial.println("Not sure what happened");
-        return false;
-      }
+            continue;
+        }*/
+        // Slave not paired, attempt pair
+        esp_err_t addStatus = esp_now_add_peer(peer);
+        if(addStatus == ESP_OK){
+            DEBUG_PRINTF("Peer Added");
           }
 }
 
@@ -204,12 +189,7 @@ void deletePeer() {
 }
 
 
-void send_cb(uint8_t* macaddr, uint8_t status) {
-    DEBUG_PRINTLN("send_cb");
 
-    sendStatusCB = status;
-    DEBUG_PRINTF("send_cb = %d",sendStatusCB);
-}
 
 
 void storeAndSleep(int sleepSecs)
@@ -259,11 +239,8 @@ void readSensorGas(){
           {
             readSHT();
           }
-   
-    ccsInit();
-    if (isCCSAvailable()){
-       readCCS();
-    }
+
+    readCCS();
     SensorTHG.temperature = RSTATE.temperature;
     SensorTHG.humidity = RSTATE.humidity;
     SensorTHG.co2ppm = RSTATE.co2;
@@ -280,7 +257,7 @@ void setup() {
     Serial.begin(115200);
     printrtc();
     DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
-    if ( ((int)rtc_get_reset_reason(0) == 12) || ((int)rtc_get_reset_reason(0) == 1))  { 
+    if ( (int)rtc_get_reset_reason(0) == 1)  { 
     RSTATE.isPortalActive  = true;
     if (!reconnectAP(AP_MODE_SSID)) {
       DEBUG_PRINTLN("Error Setting Up AP Connection");
@@ -290,13 +267,19 @@ void setup() {
     captivePortal.beginServer();
     delay(100);
   }
+
+    
     pinMode(SIG_PIN, OUTPUT);
     pinMode(TEMP_SENSOR_PIN, INPUT);
     pinMode(CONFIG_PIN, INPUT);
     pinMode(VOLTAGE_DIV_PIN, OUTPUT);
     digitalWrite(VOLTAGE_DIV_PIN, LOW);
     analogSetAttenuation(ADC_0db);
-    
+    ccsInit();
+    if(isCCSAvailable()){
+        DEBUG_PRINTLN("Warming up co2");
+        RSTATE.isCO2Available = warmCCS();
+      }    
     if(!RSTATE.isPortalActive){
         rtcState.wakeupsCount++; // increment wakeup count.
         WiFi.mode(WIFI_STA);
@@ -310,6 +293,8 @@ void setup() {
 
 
 void loop() {
+
+    
     
     if(!RSTATE.isPortalActive){
 
@@ -320,18 +305,31 @@ void loop() {
         storeAndSleep(DATA_SEND_PERIODICITY_SECS);
         return;
     }
+   
        DEBUG_PRINTLN("processing stored gateways");
 
-        scanPeeers();
+    /*if ((rtcState.gatewayValidCount <1)|| (rtcState.gatewayValidCount >3)){
+            scanPeeers();
+             // give up and go for long sleep, this cycles data will be lost
+            if (rtcState.gatewayNotFoundCount>MAX_DATA_RETRY_COUNT) {
+                rtcState.gatewayNotFoundCount = 0;
+                storeAndSleep(DATA_SEND_PERIODICITY_SECS);
+            }
+      
+      }*/
+
+      configureSlave();
         
 
     // now we have valid gateways
     addPeers();
+    //vTaskSuspend( xHandle );
 
     int sendStatus = 1; // default assumes failure
     int aggSendStatus = 1;
     const uint8_t *peer_addr = slave.peer_addr;
-   
+   //for(int i = 0; i < rtcState.gatewayValidCount; i++)
+    //{
         switch (SENSOR_PROFILE)
         {
         case SensorTemp:
@@ -355,21 +353,22 @@ void loop() {
         default:
             break;
         }
+
         
         // wait for sendstatus callback for about 10ms
-        yieldingDelay(10, 1);
+        yieldingDelay(10, 2);
 
         // successful
-        if (!sendStatus && !sendStatusCB)
+        if (!sendStatus && sendStatusCB)
         {
             aggSendStatus = 0; // mark aggregate success.
+           
         }
-    
+    //}
 
     // successful in sending data
     if (!aggSendStatus) {
         DEBUG_PRINTLN("Send status successful" );
-        sendStatusCB=1;
         rtcState.sendFailures = 0;
         storeAndSleep(DATA_SEND_PERIODICITY_SECS);
         return;
@@ -395,6 +394,25 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  status == ESP_NOW_SEND_SUCCESS ? sendStatusCB =1 : sendStatusCB=0;
   Serial.print("Last Packet Sent to: "); Serial.println(macStr);
   Serial.print("Last Packet Send Status: "); Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
+
+
+
+/*void TaskCalculateCCS(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+  for (;;) // A Task shall never return or exit.
+  { 
+    ccsInit();
+    if(isCCSAvailable()){
+        RSTATE.isCO2Available = warmCCS();
+      }
+      if(RSTATE.isCO2Available){
+          readCCS();
+        }
+        vTaskDelay(100);
+  }
+  }*/
