@@ -4,3 +4,6 @@
 .pio
 src/CaptivePortal.h5596843329658401802.tmp
 src/src.ino.cpp
+*.crt
+*.key
+*.pem
