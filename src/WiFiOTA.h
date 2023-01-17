@@ -29,7 +29,6 @@ bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
   bool connectSuccess = true;
   int loopCounter = 0;
   if (WiFi.isConnected()) {
-    DEBUG_PRINTLN("already in STA mode and is connected");
     RSTATE.isAPActive = false;
     return true;
   }

@@ -31,14 +31,12 @@ const char* sensorProfileToString(uint8_t sProfile) {
 
 struct SensorPayload {
   public:
-    SensorPayload(): sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), deviceType(DEVICE_TYPE),
-      batteryPercentage(BATTERY_INITIAL_READING) {
+    SensorPayload(): sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), batteryPercentage(BATTERY_INITIAL_READING) {
     }
 
     uint8_t sensorProfile;
     uint8_t hwRev;
     uint8_t fwRev;
-    uint8_t deviceType;
     uint8_t batteryPercentage;
 } __attribute__ ((packed));
 
@@ -95,7 +93,7 @@ struct SensorPayloadTHBMP : public SensorPayloadBMP {
     float bmp_humid;
 } __attribute__ ((packed));
 
-struct SensorPayloadGas : public SensorPayload {
+struct SensorPayloadGas : public SensorPayloadTH {
   SensorPayloadGas(): gas(INVALID_GAS_READING) {
     sensorProfile = SensorProfile::SensorGas;
   }

@@ -62,6 +62,10 @@ void drawDroplet(float value) {
 }
 
 
+void drawLineSmall(uint16_t cursorPosition){
+  display.fillRect(13, cursorPosition, 102, 3,WHITE);  // Draw rounded rectangle (x,y,width,height,radius,color)
+}
+
 void drawLine(uint16_t cursorPosition){
   display.fillRect(0, cursorPosition, 128, 3,WHITE);  // Draw rounded rectangle (x,y,width,height,radius,color)
 }
@@ -78,15 +82,15 @@ void drawLoGo(String annotation){
     display.setTextColor(WHITE);
     display.setTextSize(1);
     display.setFont(&FreeMonoBoldOblique12pt7b);
-    display.setCursor(5, 30);
+    display.setCursor(20, 20);
     display.print(annotation);
 }
 
 void drawTag(String annotation){
     display.setTextColor(WHITE);
     display.setTextSize(1);
-    //display.setFont(&FreeMono9pt7b);
-    display.setCursor(32, 50);
+    display.setFont(&FreeMono9pt7b);
+    display.setCursor(25, 48);
     display.print(annotation);
   }
   
@@ -95,7 +99,7 @@ void drawIp(String annotation){
     display.setTextColor(WHITE);
     display.setTextSize(1);
     display.setFont();
-    display.setCursor(1, 25);
+    display.setCursor(1, 50);
     display.print(annotation);
   }
 
@@ -149,21 +153,18 @@ void drawDisplay(DisplayMode mode)
         drawValue(valStr,58,60,1);
       }
       break;
-    case DisplayTempHumidBMP:
+    case DisplayTempHumiCO2:
       {
         drawAnotation("Temp",0,0);
-        snprintf(valStr, 20, "%.1fC", RSTATE.bmpTemp);
+        snprintf(valStr, 20, "%.1fC", RSTATE.temperature);
         drawValue(valStr,25,0,1);
         drawAnotation("Humid",0,65);
-        snprintf(valStr, 20, "%.1f", RSTATE.humidity);
+        snprintf(valStr, 20, "%.1f%c", RSTATE.humidity, 37);
         drawValue(valStr,25,65,1);
         drawLine(30);
-        drawAnotation("Alt",34,0);
-        snprintf(valStr, 20, "%.1fm", RSTATE.altitude);
+        drawAnotation("CO2",34,0);
+        snprintf(valStr, 20, "%dppm", RSTATE.carbon);
         drawValue(valStr,58,0,1);
-        drawAnotation("Bat",34,80);
-        snprintf(valStr, 20, "%d%c", RSTATE.batteryPercentage,37);
-        drawValue(valStr,58,80,1);
       }
       break;
     case DisplayTemp:
@@ -182,6 +183,26 @@ void drawDisplay(DisplayMode mode)
       snprintf(valStr, 20, "%.1f", 34.5);
       drawValue(valStr,30,20,1);
       break;
+
+    case DisplayCenterTextLogo:
+      drawLoGo("MushBot");
+      drawTag("ThingHz");
+      drawLineSmall(28);
+      
+      break;
+    case DisplayDeviceHealth:
+      drawAnotation("Making Network Connection...",5,30);
+      break;
+    case DisplayDeviceStatus:
+      drawAnotation("Connected",5,10);
+      delay(4000);     
+      break;
+    case DisplayPortalConfig:
+      drawAnotation("Portal Active",10,5);
+      drawAnotation("Make Configurations",30,5);
+      drawAnotation("192.168.4.1",50,5);
+      delay(4000);     
+      break; 
     default:
       display.setTextSize(1);
       display.setCursor(20, 0);

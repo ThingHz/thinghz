@@ -47,7 +47,7 @@ String formApSsidName(String deviceId) {
 #define UDP_PACKET_BROADCAST 1
 
 
-#define DEVICE_SENSOR_TYPE  SensorTH
+#define DEVICE_SENSOR_TYPE  SensorGas
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
 #define HW_REV                          1 // poc using esp 12e/esp32, no lte modem
 
@@ -74,6 +74,8 @@ String formApSsidName(String deviceId) {
 #define SECS_MULTIPLIER_DEEPSLEEP               900 //900
 #define SECS_PORTAL_WAIT                        60 //120
 #define HTTP_CONNEC_TIMEOUT_IN_MS               100
+#define SENSOR_READINGS_INTERVAL_SECS           2
+#define PAYLOAD_POST_INTERVAL_SECS              120
 
 #define EEPROM_STORE_SIZE                       512
 #define EEPROM_STORAGE_FORMAT_VERSION           "c1"
@@ -102,6 +104,7 @@ String formApSsidName(String deviceId) {
 #define INVALID_SEA_READING        -1
 #define INVALID_BMP_TEMP_READING    99
 #define INVALID_BMP_P_READING      -1
+#define INVALID_CO2_READING         0
 
 #define MINIMUM_DEBOUNCE_TIME         250
 #define MIN_TARGET_TEMP               4

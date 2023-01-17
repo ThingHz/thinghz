@@ -14,7 +14,6 @@
 DynamicJsonDocument jsonDocument(1024);
 
 
-//const char urlmessageSend[] = "https://ir989t4sy0.execute-api.us-east-1.amazonaws.com/prod/data";
 const char urlmessageSend[] = "https://api.thinghz.com/v1/data";
 const char urlOtaSend[]     = "https://api.thinghz.com/v1/data/download-file?filename=%s"; //URL for ota file download
 
@@ -129,9 +128,14 @@ class CloudTalk {
           break;
         case SensorProfile::SensorGas :
           DEBUG_PRINTLN("Creating payload for Gas Sensor");
-          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"gas\":\"%u\",\"battery\":\"%d\",\"sensor_profile\":%d}",
+          PAYLOAD_GAS.gas = RSTATE.carbon;
+          PAYLOAD_GAS.temp = RSTATE.temperature;
+          PAYLOAD_GAS.humidity = RSTATE.humidity;
+          snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"gas\":\"%u\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
                     (PSTATE.deviceId).c_str(),
                    PAYLOAD_GAS.gas,
+                   PAYLOAD_GAS.temp,
+                   PAYLOAD_GAS.humidity,
                    RSTATE.batteryPercentage,
                    PAYLOAD_GAS.sensorProfile);
           break;

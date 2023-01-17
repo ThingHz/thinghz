@@ -34,7 +34,11 @@ enum DisplayMode {
   DisplayDeviceConfig,
   DisplayCenterTextLogo,
   DisplayTempBMP,
-  DisplayTempHumidBMP
+  DisplayTempHumidBMP,
+  DisplayDeviceHealth,
+  DisplayDeviceStatus,
+  DisplayTempHumiCO2,
+  DisplayPortalConfig
 };
 
 //advance declaration
@@ -55,14 +59,17 @@ class RunTimeState {
       isPortalActive(false),
       startPortal(0),
       macAddr(DEVICE_ID_DEFAULT),
-      batteryPercentage(BATT_VOL_100),
+      batteryPercentage(100),
       temperature(INVALID_TEMP_READING),
       humidity(INVALID_HUMIDITY_READING),
       capacitance(INVALID_CAP_READING),
       altitude(INVALID_ALTITUDE_READING),
       seaLevel(INVALID_SEA_READING),
       bmpTemp(INVALID_BMP_TEMP_READING),
-      bmphPa(INVALID_BMP_TEMP_READING)
+      bmphPa(INVALID_BMP_TEMP_READING),
+      carbon(INVALID_CO2_READING),
+      isReadSensorTimeout(false),
+      isPayloadPostTimeout(false)
     {
 
     }
@@ -81,7 +88,10 @@ class RunTimeState {
     float altitude;
     float seaLevel;
     float bmpTemp;
-    float bmphPa; 
+    float bmphPa;
+    uint16_t carbon; 
+    bool isReadSensorTimeout;
+    bool isPayloadPostTimeout;
 };
 
 /**

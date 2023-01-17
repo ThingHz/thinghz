@@ -1,16 +1,22 @@
+#include <Wire.h>
 #include "deviceState.h"
 #include "captivePortal.h"
 #include "cloudInteract.h"
 #include "hardwareDefs.h"
 #include "sensorRead.h"
 #include "utils.h"
-#include <Wire.h>
 #include "WiFiOTA.h"
+#include <Ticker.h>
 #include <rom/rtc.h>
 #include <esp_wifi.h>
 #include <driver/adc.h>
 #include "oledState.h"
+#include "SparkFun_SCD4x_Arduino_Library.h"
 
+SCD4x scd_sensor;
+
+
+Ticker sensorCheckTimer;
 DeviceState state;
 DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
@@ -36,10 +42,19 @@ void setup()
   {
     DEBUG_PRINTLN("Values Loaded");
   }
-  #ifdef OLED_DISPLAY
-    initDisplay();
-    clearDisplay();
-  #endif
+
+  delay(500);
+
+  shtInit();
+  scdInit(&scd_sensor);
+
+#ifdef OLED_DISPLAY
+  initDisplay();
+  clearDisplay();
+  RSTATE.displayEvents = DisplayCenterTextLogo;
+  drawDisplay(RSTATE.displayEvents);
+  delay(2000);
+#endif
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
   if ( ((int)rtc_get_reset_reason(0) == 12) || ((int)rtc_get_reset_reason(0) == 1))  { // =  SW_CPU_RESET
     RSTATE.isPortalActive  = true;
@@ -51,122 +66,19 @@ void setup()
     captivePortal.servePortal(true);
     captivePortal.beginServer();
     delay(100);
+#ifdef OLED_DISPLAY
+    clearDisplay();
+    RSTATE.displayEvents = DisplayPortalConfig;
+    drawDisplay(RSTATE.displayEvents);
+#endif
   }
 
-  if (!RSTATE.isPortalActive)
-  {
-    if (setCpuFrequencyMhz(80))
-    {
-      DEBUG_PRINTLN("Set to 80MHz");
-    }
-  }
 
   pinMode(SIG_PIN, OUTPUT);
-  pinMode(TEMP_SENSOR_PIN, INPUT);
   pinMode(CONFIG_PIN, INPUT);
-  pinMode(VOLTAGE_DIV_PIN, OUTPUT);
-  digitalWrite(VOLTAGE_DIV_PIN, LOW);
-  analogSetAttenuation(ADC_0db);
-  shtInit();
-  DSB112Init();
-  bmp280Init();
 
-  switch (DEVICE_SENSOR_TYPE)
-  {
-    case SensorTH:
-      {
-        if (!isSHTAvailable())
-          {
-            DEBUG_PRINTLN("SHT Not connected");
-          }
 
-        if (readSHT())
-          {
-            DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-            DEBUG_PRINTF("Humidity:%.1f\n", RSTATE.humidity);
-            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
-            #ifdef OLED_DISPLAY
-              RSTATE.displayEvents = DisplayTempHumid;
-              drawDisplay(RSTATE.displayEvents);
-            #endif
-    
-            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-                {
-                  goToDeepSleep();
-                }
-          }
-      }
-      break;
-    case SensorTemp:
-      {
-        if (readDSB112())
-          {
-            DEBUG_PRINTF("Temperature:%.1f\n", RSTATE.temperature);
-            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
-            #ifdef OLED_DISPLAY
-              RSTATE.displayEvents = DisplayTemp;
-              drawDisplay(RSTATE.displayEvents);
-            #endif
-            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-              {
-                goToDeepSleep();
-              }
-          }        
-      }
-      break;
-    case SensorBMP:
-      {
-        if(readBMP())
-          {
-            DEBUG_PRINTF("TemperatureBMP:%.1f\n", RSTATE.bmpTemp);
-            DEBUG_PRINTF("Altitude:%.1f\n", RSTATE.altitude);
-            DEBUG_PRINTF("SeaLevel:%.1f\n", RSTATE.seaLevel);
-            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
-            #ifdef OLED_DISPLAY
-              clearDisplay();
-              RSTATE.displayEvents = DisplayTempBMP;
-              drawDisplay(RSTATE.displayEvents);
-            #endif
-            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-              {
-                goToDeepSleep();
-              }
-          }
-      }
-      break;
-    case SensorBMPTH:
-      {
-        if(readBMP() && readSHT())
-          {
-            DEBUG_PRINTF("TemperatureBMP:%.1f\n", RSTATE.bmpTemp);
-            DEBUG_PRINTF("Altitude:%.1f\n", RSTATE.altitude);
-            DEBUG_PRINTF("SeaLevel:%.1f\n", RSTATE.seaLevel);
-            DEBUG_PRINTF("humidity:%.1f\n",RSTATE.humidity);
-            RSTATE.batteryPercentage = getBatteryPercentage(readBatValue());
-            #ifdef OLED_DISPLAY
-              clearDisplay();
-              RSTATE.displayEvents = DisplayTempHumidBMP;
-              drawDisplay(RSTATE.displayEvents);
-            #endif
-            if (!RSTATE.isPortalActive && !checkAlarm(DEVICE_SENSOR_TYPE))
-              {
-                goToDeepSleep();
-              }
-          }
-      }
-      break;
-      default:
-        #ifdef OLED_DISPLAY
-          clearDisplay();
-          RSTATE.displayEvents = DisplayNone;
-          drawDisplay(RSTATE.displayEvents);
-        #endif      
-      break;
-  }
-    
-  
-
-  digitalWrite(VOLTAGE_DIV_PIN, LOW);
+  sensorCheckTimer.attach(1, oneSecCallback);
 
 }
 
@@ -174,23 +86,50 @@ void loop()
 {
   if (!RSTATE.isPortalActive)
   {
+
     if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
     {
-      DEBUG_PRINTLN("Error connecting to WiFi");
-      goToDeepSleep();
+      DEBUG_PRINTLN("Error Connecting to WiFi");
     }
 
-    if (cloudTalk.sendPayload())
-      blinkLed();
-
-    DEBUG_PRINTLN("Going to sleep");
-    goToDeepSleep();
   }
 
   if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
   {
     RSTATE.isPortalActive = false;
   }
+
+  if (RSTATE.isReadSensorTimeout) {
+    if (!isSHTAvailable()) {
+      DEBUG_PRINTLN("SHT Not connected, initialising again");
+      shtInit();
+    } else {
+      readSHT();
+      DEBUG_PRINTF("Temperature Value: %1f, Humidity Value: %1f", RSTATE.temperature, RSTATE.humidity);
+    }
+    if (!isSCDAvailable()) {
+      DEBUG_PRINTLN("SCD Not connected, initialising again");
+      scdInit(&scd_sensor);
+    } else {
+      readSCD(&scd_sensor);
+      DEBUG_PRINTF("CO2 Value: %1d", RSTATE.carbon);
+    }
+
+#ifdef OLED_DISPLAY
+    clearDisplay();
+    RSTATE.displayEvents = DisplayTempHumiCO2;
+    drawDisplay(RSTATE.displayEvents);
+#endif
+    RSTATE.isReadSensorTimeout = false;
+  }
+
+  if (RSTATE.isPayloadPostTimeout) {
+    if (cloudTalk.sendPayload())
+      blinkLed();
+    RSTATE.isPayloadPostTimeout = false;
+  }
+
+
 }
 
 void blinkLed()
@@ -200,136 +139,15 @@ void blinkLed()
   digitalWrite(SIG_PIN, LOW);
 }
 
-
-
-bool checkAlarm(uint8_t sProfile)
+void oneSecCallback()
 {
-  bool isAlarm = false;
-  DEBUG_PRINTLN(sProfile);
-  switch (sProfile)
-  {
-  case SensorProfile::SensorNone:
-    isAlarm = true;
-    break;
-  case SensorProfile::SensorTemp:
-  {
-    if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
-         (int)RSTATE.temperature > PSTATE.targetTempMin) &&
-        rtcState.wakeUpCount < MAX_WAKEUP_COUNT)
-    {
-      DEBUG_PRINTLN("Value is in range going to sleep");
-      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-      rtcState.wakeUpCount++;
-      rtcState.isEscalation = 0;
-      isAlarm = false;
-    }
-    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
-    {
-      DEBUG_PRINTLN("has Reached max offline cout now log data");
-      rtcState.wakeUpCount = 0;
-      isAlarm = true;
-    }
-    else
-    {
-      DEBUG_PRINTLN("Values not in range going to sleep");
-      rtcState.isEscalation++;
-      rtcState.wakeUpCount = 0;
-      isAlarm = true;
-    }
-  }
-  break;
-  case SensorProfile::SensorTH:
-  {
-    DEBUG_PRINTLN(rtcState.wakeUpCount);
-    DEBUG_PRINTLN(PSTATE.targetTempMax);
-    DEBUG_PRINTLN(PSTATE.targetTempMin);
-    if ((((int)RSTATE.temperature < PSTATE.targetTempMax &&
-          (int)RSTATE.temperature > PSTATE.targetTempMin)) &&
-        (rtcState.wakeUpCount < MAX_WAKEUP_COUNT))
-    {
-      DEBUG_PRINTLN("Value is in range going to sleep");
-      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-      rtcState.wakeUpCount++;
-      rtcState.isEscalation = 0;
-      isAlarm = false;
-    }
-    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
-    {
-      DEBUG_PRINTLN("has Reached max offline cout now log data");
-      rtcState.wakeUpCount = 0;
-      isAlarm = true;
-    }
-    else
-    {
-      DEBUG_PRINTLN("Values not in range Log data");
-      isAlarm = true;
-      rtcState.wakeUpCount = 0;
-      rtcState.isEscalation++;
-    }
-  }
-  break;
-  default:
-    if (((int)RSTATE.temperature < PSTATE.targetTempMax &&
-         (int)RSTATE.temperature > PSTATE.targetTempMin) &&
-        rtcState.wakeUpCount < MAX_WAKEUP_COUNT)
-    {
-      DEBUG_PRINTLN("Value is in range going to sleep");
-      DEBUG_PRINTF("Wake Up Count %d\n", rtcState.wakeUpCount);
-      rtcState.wakeUpCount++;
-      rtcState.isEscalation = 0;
-      isAlarm = false;
-    }
-    else if (rtcState.wakeUpCount >= MAX_WAKEUP_COUNT)
-    {
-      DEBUG_PRINTLN("has Reached max offline cout now log data");
-      rtcState.wakeUpCount = 0;
-      isAlarm = true;
-    }
-    else
-    {
-      DEBUG_PRINTLN("Values not in range going to sleep");
-      isAlarm = true;
-      rtcState.wakeUpCount = 0;
-      rtcState.isEscalation++;
-    }
-    break;
+  static uint oneSecTick = 0;
+  oneSecTick++;
+  if (oneSecTick % SENSOR_READINGS_INTERVAL_SECS == 0) {
+    RSTATE.isReadSensorTimeout = true;
   }
 
-  return isAlarm;
-}
-
-void goToDeepSleep()
-{
-
-  bool rc = deviceState.store();
-  if (!rc)
-  {
-    DEBUG_PRINTLN("EEPROM Values not loaded");
+  if (oneSecTick % PAYLOAD_POST_INTERVAL_SECS == 0) {
+    RSTATE.isPayloadPostTimeout = true;
   }
-  else
-  {
-    DEBUG_PRINTLN("Values Loaded");
-  }
-  WiFi.disconnect();
-  WiFi.mode(WIFI_OFF);
-  digitalWrite(VOLTAGE_DIV_PIN, HIGH);
-  DEBUG_PRINTLN("going to sleep");
-  //btStop();
-  //esp_wifi_stop();
-  //esp_bt_controller_disable();
-  //adc_power_off();
-  esp_sleep_enable_timer_wakeup(SECS_MULTIPLIER_DEEPSLEEP * MICRO_SECS_MULITPLIER);
-  //esp_sleep_enable_ext0_wakeup(GPIO_NUM_25,0);
-  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-  esp_deep_sleep_start();
-}
-
-float readBatValue()
-{
-  //formula for VD1 = 1M/(3.9M+1M)
-  int adcVal = analogRead(BATTERY_VOL_PIN);
-  float batVol = adcVal * 0.00127; //finalVolt = (1/1024)(1/VD)    external VD [VD1 = 3.3Mohm/(1Mohm+3.3Mohm)]
-  DEBUG_PRINTF("adcVal %d\n", adcVal);
-  DEBUG_PRINTF("batteryVoltage %.1f\n", batVol);
-  return batVol;
 }
