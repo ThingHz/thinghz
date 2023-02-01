@@ -145,16 +145,59 @@ String prepareRemoteFWFileName(uint8_t devType, uint8_t hwRev, uint8_t newFwRev)
   return String(retString);
 }
 
-bool isFileExistInSpiff(String fileName){
-    if (SPIFFS.exists(fileName.c_str())) {
-        return true;
-    }
-    return false;
+
+/**
+   @brief:
+   Checks if file already exists in SPIFFS
+   @param:
+   String filename
+   @return:
+   true if exists either false
+*/
+
+bool isFileExistInSpiff(String fileName) {
+  if (SPIFFS.exists(fileName.c_str())) {
+    return true;
+  }
+  return false;
 }
 
+/**
+   @brief:
+   Converts IP address to string
+   @param:
+   referance to IP address class
+   @return:
+   String IP address
+*/
 String IpAddressToString(const IPAddress& ipAddress)
 {
-  return String(ipAddress[0]) + String(".") +String(ipAddress[1]) + String(".") +String(ipAddress[2]) + String(".") +String(ipAddress[3])  ; 
+  return String(ipAddress[0]) + String(".") + String(ipAddress[1]) + String(".") + String(ipAddress[2]) + String(".") + String(ipAddress[3])  ;
+}
+
+/**
+   @brief:
+   reset modem
+*/
+void modemReset() {
+  DEBUG_PRINTLN("Reseting modem");
+  digitalWrite(MODEM_RST, HIGH);
+}
+
+
+/**
+   @brief:
+   restart modem
+*/
+void modemRestart() {
+  DEBUG_PRINTLN("Restart modem");
+  digitalWrite(MODEM_POWER_ON, HIGH);
+  delay(100);
+  digitalWrite(MODEM_PWKEY, HIGH);
+  delay(100);
+  digitalWrite(MODEM_PWKEY, LOW);
+  delay(1000);
+  digitalWrite(MODEM_PWKEY, HIGH);
 }
 
 #endif

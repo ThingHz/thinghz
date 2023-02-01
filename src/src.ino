@@ -2,6 +2,7 @@
 #include "deviceState.h"
 #include "captivePortal.h"
 #include "cloudInteract.h"
+#include "cloudInteractGSM.h"
 #include "hardwareDefs.h"
 #include "sensorRead.h"
 #include "utils.h"
@@ -21,11 +22,13 @@ DeviceState state;
 DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 CloudTalk cloudTalk;
+CloudTalkGSM cloudTalkGsm;
 
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
   Wire.begin();
   DEBUG_PRINTLN("This is THingHz Range of wireless sensors");
   if (!EEPROM.begin(EEPROM_STORE_SIZE))
@@ -73,11 +76,12 @@ void setup()
 #endif
   }
 
-
-  pinMode(SIG_PIN, OUTPUT);
-  pinMode(CONFIG_PIN, INPUT);
-
-
+  pinMode(MODEM_PWKEY, OUTPUT);
+  pinMode(MODEM_RST, OUTPUT);
+  pinMode(MODEM_POWER_ON, OUTPUT);
+  modemReset();
+  modemRestart();
+  cloudTalkGsm.initialiseModem();
   sensorCheckTimer.attach(1, oneSecCallback);
 
 }
@@ -86,16 +90,22 @@ void loop()
 {
   if (!RSTATE.isPortalActive)
   {
+    if (!isDesiredWiFiAvailable(PSTATE.apSSID) && !RSTATE.isSwitchToGSMRequired) {
+      DEBUG_PRINTLN("WiFi not available Switch to GSM");
+      RSTATE.isSwitchToGSMRequired = true;
+    }
 
-    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+    if (!RSTATE.isSwitchToGSMRequired && !reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
     {
-      DEBUG_PRINTLN("Error Connecting to WiFi");
+      DEBUG_PRINTLN("Error Connecting to WiFi, or switched to GSM");
+
     }
 
   }
 
   if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
   {
+    captivePortal.endPortal();
     RSTATE.isPortalActive = false;
   }
 
@@ -124,20 +134,20 @@ void loop()
   }
 
   if (RSTATE.isPayloadPostTimeout) {
-    if (cloudTalk.sendPayload())
-      blinkLed();
+    sensorCheckTimer.detach();
+    if (RSTATE.isSwitchToGSMRequired) {
+      if (testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero)) {
+        cloudTalkGsm.restartModem();
+      }
+      cloudTalkGsm.sendPayload();
+    } else {
+      cloudTalk.sendPayload();
+    }
     RSTATE.isPayloadPostTimeout = false;
+    sensorCheckTimer.attach(1, oneSecCallback);
   }
-
-
 }
 
-void blinkLed()
-{
-  digitalWrite(SIG_PIN, HIGH);
-  delay(500);
-  digitalWrite(SIG_PIN, LOW);
-}
 
 void oneSecCallback()
 {

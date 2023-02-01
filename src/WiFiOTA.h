@@ -21,7 +21,6 @@ const IPAddress netMsk(255, 255, 255, 0);
    false in case of faliure
 */
 
-
 bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
   if (RSTATE.isPortalActive) {
     return true;
@@ -57,6 +56,15 @@ bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
   return connectSuccess;
 }
 
+/**
+   @brief:
+   get last 3 bytes of MAC or full mac, according to flag fullSizeMac 
+   this is used to generate device id and to generate name for AP SSID
+   @param:
+   macAddress of ESP32    flag for getting fullSizeMac   
+   @return:
+   String with fullsize mac or last 3 bytes mac 
+*/
 
 String getLast3ByteMac(uint8_t* mac, bool fullSizeMac){
   char macStr[9] = { 0 };
@@ -69,47 +77,15 @@ String getLast3ByteMac(uint8_t* mac, bool fullSizeMac){
   return String(macStr);
 }
 
-bool configESPDeviceAP() {
-  //FIXME:: these two can also fail, check for errors
-  WiFi.disconnect();
-  WiFi.mode(WIFI_AP_STA);
+/**
+   @brief:
+   Configure ESP32 in Acess Point mode and generates unique name for SSID with last 3 bytes of mac
+   @param:
+   AP SSID name
+   @return:
+   true if AP configure was success
+*/
 
-  DEBUG_PRINTLN("Confuring Device AP");
-  String Prefix = "Gateway-";
-  uint8_t mac[6];
-  String macStr = getLast3ByteMac(mac,false);
-  String SSID = Prefix + macStr;
-  String Password = "Ag2782$#"; // no one is going to connect to it, but sound password is good.
-  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), ESPNOW_CHANNEL, 0);
-  if (!result) {
-    DEBUG_PRINTLN("AP Config failed.");
-    return false;
-  }
-
-  DEBUG_PRINTLN("AP Config Success. Broadcasting with AP: " + String(SSID));
-
-  return true;
-}
-
-
-/*bool switchToESPNowGateway(esp_now_recv_cb_t espNowRecvCB)
-{
-  // todo :: we need to swtich to espnow only if not already setup otherwise just return
-  configESPDeviceAP();
-  int ESPNow_err = ESPNow.init();
-  if (ESPNow_err != ESP_OK) {
-    DEBUG_PRINTLN("ESPNow Init failed");
-    return false;
-  } else {
-    DEBUG_PRINTLN(ESPNow_err);
-  }
-
-  if (ESPNow.reg_recv_cb(espNowRecvCB) != ESP_OK ) {
-    DEBUG_PRINTLN("ESP callback register failed");
-    return false;
-  }
-  return true;
-}*/
 
 bool APConnection(const String& APssid) {
   WiFi.disconnect();
@@ -213,5 +189,26 @@ String macAddrWithoutColons()
   return String(macStr);
 }
 
+/**
+   @brief:
+   scan WiFi to find our default SSID
+   @return:
+   true if exists
+*/
+bool isDesiredWiFiAvailable(const String& ssid){
+  int n = WiFi.scanNetworks();
+  if (n==0){
+      return false;
+  }
+  for(int i=0; i < n; i++){
+      String availableSSID = WiFi.SSID(i);
+      int res = strcmp(availableSSID.c_str(),ssid.c_str());
+      if(res == 0){
+        return true;
+      }
+  }
+  WiFi.scanDelete();
+  return false;
+}
 
 #endif

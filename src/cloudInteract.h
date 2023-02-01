@@ -1,7 +1,7 @@
 #ifndef CLOUDTALK_H
 #define CLOUDTALK_H
 
-#include <HTTPClient.h>
+#include "HTTPClient.h"
 #include "ArduinoJson.h"
 #include <SPIFFS.h>
 #include "WiFiOTA.h"
@@ -53,7 +53,7 @@ class CloudTalk {
         retJson = http.getString();   //Get the response payload
         DEBUG_PRINTLN(retJson);
       } else {
-        DEBUG_PRINTF("[HTTP] GET... failed, error: %s and code is %d\n", http.errorToString(httpCode).c_str(), httpCode);
+        DEBUG_PRINTF("[HTTP] POST... failed, error: %s and code is %d\n", http.errorToString(httpCode).c_str(), httpCode);
         return false;
       }
       http.end();
@@ -80,6 +80,7 @@ class CloudTalk {
       return true;
     }
 
+    
  /**
        @brief: Create message payload
        @param: Sensor profile of sesnor type

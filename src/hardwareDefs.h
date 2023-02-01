@@ -26,15 +26,23 @@ String formApSsidName(String deviceId) {
   return String(AP_MODE_SSID + deviceId);
 }
 
+//SPIFFS path for OTA firmware
 #define SPIFF_OTA_PATH "/"
 
-#define DEBUG_SERIAL 1 // should come from build system
-
 /**
-   @todo: We need to do this part later
+ * @brief 
+ * SIM800L modem pins 
 */
-#define ESP_NOW      1
-#define ESPNOW_CHANNEL                          1
+
+#define MODEM_RST            14
+#define MODEM_PWKEY          4
+#define MODEM_POWER_ON       23
+#define MODEM_TX             27
+#define MODEM_RX             26
+
+
+#define DEBUG_SERIAL    1 // should come from build system
+#define SerialAT        Serial1 //define Serial 1 for TinyGSM Serial
 
 //Comment out to disable display
 #define OLED_DISPLAY 1
@@ -44,54 +52,91 @@ String formApSsidName(String deviceId) {
 #define BATT_VOL_100               4.2
 
 
-#define UDP_PACKET_BROADCAST 1
-
-
+//Enum for Device Sensor profile
 #define DEVICE_SENSOR_TYPE  SensorGas
+
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
-#define HW_REV                          1 // poc using esp 12e/esp32, no lte modem
+#define HW_REV                          1 
 
 // firmware rev
-#define FW_REV                          20
+#define FW_REV                          1
 
 //missied Data point spiff file
 #define MISS_POINT_STORE_FILE_NAME      "/missDataPoint.txt"
 
-// wiring configuration
-#define TEMP_SENSOR_PIN     32
-#define BATTERY_VOL_PIN     36
-#define SIG_PIN             26
-#define CONFIG_PIN          25
-#define VOLTAGE_DIV_PIN     5
+/**
+ * @brief 
+ * Wiring configuration pin 
+*/
+#define TEMP_SENSOR_PIN     32                  //DS18B20 pin
+#define BATTERY_VOL_PIN     36                  //Battery voltage pin
+#define SIG_PIN             26                  //Status Signal pin
+#define CONFIG_PIN          25                  //portal configuration pin
+#define VOLTAGE_DIV_PIN     5                   //Voltage devider pin
 
-//Display Configuration
+
+/**
+ * @brief 
+ * SSD1306 Screen Width 
+*/
 #define SCREEN_WIDTH                            128 // OLED display width, in pixels
 #define SCREEN_HEIGHT                           64 // OLED display height, in pixels
 
 
+/**
+ * @brief 
+ * Millis and Micro multipliers 
+*/
 #define MILLI_SECS_MULTIPLIER                   1000
 #define MICRO_SECS_MULITPLIER                   1000000
-#define SECS_MULTIPLIER_DEEPSLEEP               900 //900
-#define SECS_PORTAL_WAIT                        60 //120
+
+// deepsleep seconds
+#define SECS_MULTIPLIER_DEEPSLEEP               900 
+
+//captive portal wait seconds
+#define SECS_PORTAL_WAIT                        60 
+
+//http connection timeout in milli seconds
 #define HTTP_CONNEC_TIMEOUT_IN_MS               100
+
+//Sensor reading interval in seconds
 #define SENSOR_READINGS_INTERVAL_SECS           2
-#define PAYLOAD_POST_INTERVAL_SECS              120
 
-#define EEPROM_STORE_SIZE                       512
-#define EEPROM_STORAGE_FORMAT_VERSION           "c1"
-#define EEPROM_STARTING_ADDRESS                 0
+//payload post interval in seconds 120:2mins 300:5mins 600:10mins 
+#define PAYLOAD_POST_INTERVAL_SECS              60
 
-#define WAN_WIFI_SSID_DEFAULT                    "Sarthak"
-#define WAN_WIFI_PASS_DEFAULT                    "wireless18"
+/**
+ * @brief 
+ * EEPROM preprocessors
+ */
+
+#define EEPROM_STORE_SIZE                       512   //EEPROM Size
+#define EEPROM_STORAGE_FORMAT_VERSION           "c1"  //EEPROM storage version just a char to match
+#define EEPROM_STARTING_ADDRESS                 0     //EEPROM starting address
+
+/**
+ * @brief 
+ * WiFi Configuration default preprocessors
+ */
+#define WAN_WIFI_SSID_DEFAULT                    "TimTim"     
+#define WAN_WIFI_PASS_DEFAULT                    "wireless18"  
+
+//ThingHz default Device Id
 #define DEVICE_ID_DEFAULT                        "THING00001"
 
 
 
-#define REF_PRESSURE                            1018.6  // hPa local QFF (official meteor-station reading)
-#define OUT_TEMP                                17.2           // °C  measured local outdoor temp.
-#define BAROMETER_ALTITUDE                      300  // meters ... map readings + barometer position
-
+/**
+ * @brief 
+ * Battery  default preprocessors
+ */
 #define BATTERY_INITIAL_READING     0
+#define BATTERY_FINAL_READING       100
+
+/**
+ * @brief 
+ * Invalid readings default preprocessors
+ */
 #define INVALID_TEMP_READING        99
 #define INVALID_HUMIDITY_READING    0
 #define INVALID_GAS_READING        -1
@@ -106,26 +151,41 @@ String formApSsidName(String deviceId) {
 #define INVALID_BMP_P_READING      -1
 #define INVALID_CO2_READING         0
 
-#define MINIMUM_DEBOUNCE_TIME         250
+/**
+ * @brief 
+ * calibration levels
+ */
+#define CALIBRATION_LEVEL_TEMP      0
+#define CALIBRATION_LEVEL_HUMID     0
+#define CALIBRATION_LEVEL_CARBON    0
+
+#define ALTITUDE_FOR_SCD            327
+
+
+/**
+ * @brief 
+ * escalation ranges for parameters
+ */
 #define MIN_TARGET_TEMP               4
 #define MAX_TARGET_TEMP               20
 #define MIN_TARGET_HUMID              20
 #define MAX_TARGET_HUMID              60
+#define MIN_TARGET_GAS                600
+#define MAX_TARGET_GAS                1800
+
+
+/**
+ * @brief 
+ * Wakeup count default preprocessors
+ */
 #define MAX_WAKEUP_COUNT              2
 #define MIN_WAKEUP_COUNT              0
-#define CALIBRATION_LEVEL             0
-
-#define CAP_SAMPLE_NUMBER             10
-
-//Values corresponding to FDC
-#define UPPER_BOUND  0X4000                 // max readout capacitance
-#define LOWER_BOUND  (-1 * UPPER_BOUND)
-#define CHANNEL 0                          // channel to be read
-#define MEASURMENT 0                       // measurment channel
 
 
-
-
+/**
+ * @brief 
+ * DBUG_SERIAL preprocessors
+ */
 #ifdef DEBUG_SERIAL
 #define DEBUG_PRINTF(...)           Serial.printf(__VA_ARGS__)
 #define DEBUG_PRINTLN(...)          Serial.println(__VA_ARGS__)

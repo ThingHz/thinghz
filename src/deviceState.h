@@ -22,7 +22,7 @@ enum DeviceStateEvent {
   DSE_LIGHTFaulty             = 1 << 9,
   DSE_CAPfaulty               = 1 << 10,
   DSE_DisplayDisconnected     = 1 << 11,
-
+  DSE_SimStatusZero           = 1 << 12
 };
 
 enum DisplayMode {
@@ -69,7 +69,8 @@ class RunTimeState {
       bmphPa(INVALID_BMP_TEMP_READING),
       carbon(INVALID_CO2_READING),
       isReadSensorTimeout(false),
-      isPayloadPostTimeout(false)
+      isPayloadPostTimeout(false),
+      isSwitchToGSMRequired(false)
     {
 
     }
@@ -92,6 +93,7 @@ class RunTimeState {
     uint16_t carbon; 
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
+    bool isSwitchToGSMRequired;
 };
 
 /**
@@ -104,11 +106,9 @@ class PersistantState {
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
       apPass(WAN_WIFI_PASS_DEFAULT),
       deviceId(DEVICE_ID_DEFAULT),
-      targetTempMin(MIN_TARGET_TEMP),
-      targetHumidityMin(MIN_TARGET_HUMID),
-      targetTempMax(MAX_TARGET_TEMP),
-      targetHumidityMax(MAX_TARGET_HUMID),
-      tempCalibration(CALIBRATION_LEVEL),
+      tempCalibration(CALIBRATION_LEVEL_TEMP),
+      humidCalibration(CALIBRATION_LEVEL_HUMID),
+      carbonCalibration(CALIBRATION_LEVEL_CARBON),
       isOtaAvailable(0),
       newfWVersion(0)
     {
@@ -121,23 +121,19 @@ class PersistantState {
       return ((apSSID == rhs.apSSID) &&
               (apPass == rhs.apPass) &&
               (deviceId == rhs.deviceId) &&
+              (tempCalibration == rhs.tempCalibration) &&
+              (humidCalibration == rhs.humidCalibration) &&
+              (carbonCalibration == rhs.carbonCalibration) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
-              (newfWVersion == rhs.newfWVersion) &&
-              (targetTempMin == rhs.targetTempMin) &&
-              (targetHumidityMin == rhs.targetHumidityMin) &&
-              (targetTempMax == rhs.targetTempMax) &&
-              (targetHumidityMax == rhs.targetHumidityMax) &&
-              (tempCalibration == rhs.tempCalibration));
+              (newfWVersion == rhs.newfWVersion));
     }
     // public data members
     String apSSID;
     String apPass;
     String deviceId;
-    int targetTempMin;
-    int targetHumidityMin;
-    int targetTempMax;
-    int targetHumidityMax;
     int tempCalibration;
+    int humidCalibration;
+    int carbonCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
    
@@ -159,11 +155,9 @@ struct PersistantStateStorageFormat {
     char apSSID[30];
     char deviceId[30];
     char apPass[30];
-    int setTempMin;
-    int setHumidityMin;
-    int setTempMax;
-    int setHumidityMax;
     int tempCalibration;
+    int humidCalibration;
+    int carbonCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
 } __attribute__ ((packed));
@@ -173,11 +167,9 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
   deviceId = String(persistantStore.deviceId);
-  targetTempMin = persistantStore.setTempMin ;
-  targetHumidityMin = persistantStore.setHumidityMin;
-  targetTempMax = persistantStore.setTempMax;
-  targetHumidityMax = persistantStore.setHumidityMax;
-  tempCalibration = persistantStore.tempCalibration;
+  tempCalibration = persistantStore.tempCalibration ;
+  humidCalibration = persistantStore.humidCalibration;
+  carbonCalibration = persistantStore.carbonCalibration;
   isOtaAvailable = persistantStore.isOtaAvailable;
   newfWVersion = persistantStore.newfWVersion;
 }
@@ -188,11 +180,9 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
   strcpy(deviceId, persistantState.deviceId.c_str());
-  setTempMin = persistantState.targetTempMin;
-  setHumidityMin = persistantState.targetHumidityMin;
-  setTempMax = persistantState.targetTempMax;
-  setHumidityMax = persistantState.targetHumidityMax;
   tempCalibration = persistantState.tempCalibration;
+  humidCalibration = persistantState.humidCalibration;
+  carbonCalibration = persistantState.carbonCalibration;
   isOtaAvailable = persistantState.isOtaAvailable;
   newfWVersion = persistantState.newfWVersion;
 }
