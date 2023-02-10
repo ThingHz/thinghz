@@ -34,11 +34,10 @@ String formApSsidName(String deviceId) {
  * SIM800L modem pins 
 */
 
-#define MODEM_RST            14
 #define MODEM_PWKEY          4
-#define MODEM_POWER_ON       23
-#define MODEM_TX             27
-#define MODEM_RX             26
+#define MODEM_TX             26
+#define MODEM_RX             27
+#define LED_BUILTIN          2
 
 
 #define DEBUG_SERIAL    1 // should come from build system
@@ -97,13 +96,40 @@ String formApSsidName(String deviceId) {
 #define SECS_PORTAL_WAIT                        60 
 
 //http connection timeout in milli seconds
-#define HTTP_CONNEC_TIMEOUT_IN_MS               100
+#define HTTP_CONNEC_TIMEOUT_IN_MS                 100
 
-//Sensor reading interval in seconds
-#define SENSOR_READINGS_INTERVAL_SECS           2
+//Sensor reading interval in seconds/100
+#define SENSOR_READINGS_INTERVAL_MSECS            2
 
-//payload post interval in seconds 120:2mins 300:5mins 600:10mins 
-#define PAYLOAD_POST_INTERVAL_SECS              60
+//payload post interval in seconds 120:2mins 300:5mins 600:10mins/100 
+#define PAYLOAD_POST_INTERVAL_MSECS               300
+
+//mqtt check connection in seconds 120:2mins 300:5mins 600:10mins/100 
+#define MQTT_CHECK_CONNECTION                     20
+
+
+
+//AT wait response time
+#define AT_WAIT_TIME_MSECS                      12000L
+
+
+/**
+ * @brief 
+ * Certificates file name
+ */
+#define CLIENTCERT_FILE_NAME                    "clientcert.pem"
+#define CACERT_FILE_NAME                        "cacert.pem"
+#define CLIENTKEY_FILE_NAME                     "clientkey.pem"
+
+/**
+ * @brief 
+ * MQTT Constants
+ */
+#define MQTT_CLIENT_NAME                        "ThingHz_client01"
+#define MQTT_HOST                               "tcp://a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com:8883"      
+#define MQTT_HOST_USING_PUBSUB                  "a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com"
+#define MQTT_TOPIC                              "aws/thing/thing_test/"
+#define NTP_SERVER                              "pool.ntp.org"
 
 /**
  * @brief 
@@ -181,6 +207,7 @@ String formApSsidName(String deviceId) {
 #define MAX_WAKEUP_COUNT              2
 #define MIN_WAKEUP_COUNT              0
 
+#define DUMP_AT_COMMANDS              1
 
 /**
  * @brief 
@@ -190,10 +217,12 @@ String formApSsidName(String deviceId) {
 #define DEBUG_PRINTF(...)           Serial.printf(__VA_ARGS__)
 #define DEBUG_PRINTLN(...)          Serial.println(__VA_ARGS__)
 #define DEBUG_PRINT(...)            Serial.print(__VA_ARGS__)
+#define DEBUG_WRITE(...)            Serial.write(__VA_ARGS__)
 #else
 #define DEBUG_PRINTF(...)
 #define DEBUG_PRINTLN(...)
 #define DEBUG_PRINT(...)
+#define DEBUG_WRITE(...)            
 #endif
 
 

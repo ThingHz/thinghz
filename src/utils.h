@@ -175,29 +175,20 @@ String IpAddressToString(const IPAddress& ipAddress)
   return String(ipAddress[0]) + String(".") + String(ipAddress[1]) + String(".") + String(ipAddress[2]) + String(".") + String(ipAddress[3])  ;
 }
 
-/**
-   @brief:
-   reset modem
-*/
-void modemReset() {
-  DEBUG_PRINTLN("Reseting modem");
-  digitalWrite(MODEM_RST, HIGH);
-}
 
 
 /**
    @brief:
    restart modem
 */
-void modemRestart() {
+void modemPowerKeyToggle() {
   DEBUG_PRINTLN("Restart modem");
-  digitalWrite(MODEM_POWER_ON, HIGH);
-  delay(100);
-  digitalWrite(MODEM_PWKEY, HIGH);
-  delay(100);
   digitalWrite(MODEM_PWKEY, LOW);
-  delay(1000);
+  delay(100);
   digitalWrite(MODEM_PWKEY, HIGH);
+  delay(1000);
+  digitalWrite(MODEM_PWKEY, LOW);
+  
 }
 
 #endif

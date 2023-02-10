@@ -22,7 +22,11 @@ enum DeviceStateEvent {
   DSE_LIGHTFaulty             = 1 << 9,
   DSE_CAPfaulty               = 1 << 10,
   DSE_DisplayDisconnected     = 1 << 11,
-  DSE_SimStatusZero           = 1 << 12
+  DSE_SimStatusZero           = 1 << 12,
+  DSE_ConnectMqttFailed       = 1 << 13,
+  DSE_MessagePublishFailed    = 1 << 14,
+  DSE_StartMqttFailed         = 1 << 15,
+  DSE_SubscribeFailed         = 1 << 16,
 };
 
 enum DisplayMode {
@@ -70,7 +74,8 @@ class RunTimeState {
       carbon(INVALID_CO2_READING),
       isReadSensorTimeout(false),
       isPayloadPostTimeout(false),
-      isSwitchToGSMRequired(false)
+      isSwitchToGSMRequired(false),
+      isMqttConnectionTimeout(false)
     {
 
     }
@@ -94,6 +99,7 @@ class RunTimeState {
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
     bool isSwitchToGSMRequired;
+    bool isMqttConnectionTimeout;
 };
 
 /**
