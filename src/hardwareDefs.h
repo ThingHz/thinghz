@@ -22,6 +22,8 @@ const char* deviceTypeEnumToString(uint8_t devType) {
 
 #define AP_MODE_SSID "ThingHz-"
 
+#define TEST_PUB_SUB 1
+
 String formApSsidName(String deviceId) {
   return String(AP_MODE_SSID + deviceId);
 }

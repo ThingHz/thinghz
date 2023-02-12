@@ -2,7 +2,6 @@
 #define WIFI_OTA_H
 #include "hardwareDefs.h"
 #include <SPIFFS.h>
-#include <Update.h>
 #include "deviceState.h"
 
 

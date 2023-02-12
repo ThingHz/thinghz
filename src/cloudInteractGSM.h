@@ -1,8 +1,6 @@
 #ifndef CLOUDTALKGSM_H
 #define CLOUDTALKGSM_H
 
-#include "ArduinoHttpClient.h"
-
 #include "ArduinoJson.h"
 #include <SPIFFS.h>
 #include "WiFiOTA.h"
@@ -15,7 +13,7 @@
 #define TINY_GSM_RX_BUFFER 1024
 #include <TinyGsmClient.h>
 
-const char topic[] = "aws/thing/thing_test/";
+const char topic_publish[] = "aws/thing/thing_test/";
 const char topic_subscribe[] = "aws/thing/thing_test/light";
 const int port = 8883;
   
@@ -33,8 +31,8 @@ class CloudTalkGSM
     bool setMQTTTopic(TinyGsm *modem) {
       modem->sendAT(GF("+CMQTTTOPIC=0,21"));
       if (modem->waitResponse(AT_WAIT_TIME_MSECS,GF(">")) != 1) return false;
-      size_t topic_size = strlen(topic);
-      modem->stream.write(topic, topic_size);
+      size_t topic_size = strlen(topic_publish);
+      modem->stream.write(topic_publish, topic_size);
       modem->stream.write(GSM_NL);
       modem->stream.flush();
       int res = modem->waitResponse(AT_WAIT_TIME_MSECS);
@@ -366,9 +364,9 @@ class CloudTalkGSM
           @return: true when everything goes write
     */
 
-    void restartModem(TinyGsm *modem)
+    bool restartModem(TinyGsm *modem)
     {
-      modem->restart();
+      int ret = modem->restart();
       String modemInfo = modem->getModemInfo();
       DEBUG_PRINTF("modemInfo: %s\n SimStatue: %d\n", modemInfo.c_str(), modem->getSimStatus());
       if (modem->getSimStatus() == 0)
@@ -379,6 +377,7 @@ class CloudTalkGSM
       {
         clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero);
       }
+      return ret;
     }
 
 
@@ -388,9 +387,9 @@ class CloudTalkGSM
           @return: true when everything goes write
     */
 
-    void initialiseModem(TinyGsm *modem)
+    bool initialiseModem(TinyGsm *modem)
     { DEBUG_PRINTLN("initialising Modem");
-      modem->init();
+      int ret = modem->init();
       String modemInfo = modem->getModemInfo();
       DEBUG_PRINTF("modemInfo: %s\n SimStatus: %d\n", modemInfo.c_str(), modem->getSimStatus());
       if (modem->getSimStatus() == 0)
@@ -401,8 +400,8 @@ class CloudTalkGSM
       {
         clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero);
       }
+    return ret;
     }
-
     
 };
 

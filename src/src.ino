@@ -1,7 +1,8 @@
 #include <Wire.h>
+#include "SSLClient.h"
 #include "deviceState.h"
 #include "captivePortal.h"
-#include "cloudInteract.h"
+//#include "cloudInteract.h"
 #include "cloudInteractGSM.h"
 #include "hardwareDefs.h"
 #include "sensorRead.h"
@@ -9,7 +10,6 @@
 #include "WiFiOTA.h"
 #include <Ticker.h>
 #include <rom/rtc.h>
-#include <esp_wifi.h>
 #include <driver/adc.h>
 #include "oledState.h"
 #include "SparkFun_SCD4x_Arduino_Library.h"
@@ -17,6 +17,7 @@
 #define TINY_GSM_RX_BUFFER 1024
 #include <TinyGsmClient.h>
 #include "PubSubClient.h"
+#include "certs.h"
 
 SCD4x scd_sensor;
 
@@ -24,14 +25,20 @@ Ticker sensorCheckTimer;
 DeviceState state;
 DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
-CloudTalk cloudTalk;
+//CloudTalk cloudTalk;
 
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, Serial);
 TinyGsm modem(debugger);
+TinyGsmClient gsmClient(modem);
+SSLClient secureclient(&gsmClient);
+PubSubClient mqtt(secureclient);
 #else
 TinyGsm modem(SerialAT);
+TinyGsmClient gsmClient(modem);
+SSLClient secureclient(&gsmClient);
+PubSubClient mqtt(secureclient);
 #endif
 
 CloudTalkGSM cloudTalkGsm;
@@ -92,8 +99,17 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(MODEM_PWKEY, OUTPUT);
   modemPowerKeyToggle();
+  secureclient.setCACert(cacert);
+  secureclient.setCertificate(clientcert);
+  secureclient.setPrivateKey(clientkey);
+  
+  mqtt.setServer(MQTT_HOST_USING_PUBSUB, 8883);
+  mqtt.setCallback(mqttCallback);
+  
   cloudTalkGsm.restartModem(&modem);
   cloudTalkGsm.initialiseModem(&modem);
+
+#ifndef TEST_PUB_SUB
   cloudTalkGsm.updateNTPTime(&modem);
   cloudTalkGsm.configureSSL(&modem);
   if (!cloudTalkGsm.startMQTTService(&modem))
@@ -108,6 +124,7 @@ void setup()
   {
     DEBUG_PRINTLN("ERROR Connecting to MQTT");
   }
+#endif
 
   sensorCheckTimer.attach(1, oneSecCallback);
 }
@@ -126,7 +143,6 @@ void loop()
     {
       DEBUG_PRINTLN("Error Connecting to WiFi, or switched to GSM");
     }
-    
   }
 
   if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
@@ -166,45 +182,39 @@ void loop()
     RSTATE.isReadSensorTimeout = false;
   }
 
-  if (RSTATE.isMqttConnectionTimeout){
-      mqtt_check_connection(RSTATE.isSwitchToGSMRequired);
-      RSTATE.isMqttConnectionTimeout = false;
+  if (RSTATE.isMqttConnectionTimeout)
+  {
+    mqtt_check_connection(RSTATE.isSwitchToGSMRequired);
+    RSTATE.isMqttConnectionTimeout = false;
   }
 
   if (RSTATE.isPayloadPostTimeout)
   {
-    if (RSTATE.isSwitchToGSMRequired) {
-    DEBUG_PRINTLN("Post to cloud  ");
-    sensorCheckTimer.detach();
-    
-      int mqtt_pub_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_MessagePublishFailed);
-      int mqtt_start_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_StartMqttFailed);
-      int mqtt_connect_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_ConnectMqttFailed);
-      int mqtt_subscribe_failed_device_event  = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SubscribeFailed);
-      
+    if (RSTATE.isSwitchToGSMRequired)
+    {
+      DEBUG_PRINTLN("Post to cloud  ");
+      sensorCheckTimer.detach();
 
-      DEBUG_PRINTF("failed mqtt events publish failed: %d  start failed: %d, connect failed: %d\n",
-                   mqtt_pub_failed_device_event,
-                   mqtt_start_failed_device_event,
-                   mqtt_connect_failed_device_event);
-      if (!mqtt_pub_failed_device_event && !mqtt_connect_failed_device_event)
+      /*if (!mqtt_pub_failed_device_event && !mqtt_connect_failed_device_event)
       {
         DEBUG_PRINTLN("client connected. Publish your meesage");
         cloudTalkGsm.setMQTTTopic(&modem);
         cloudTalkGsm.createMQTTPayload(&modem);
         cloudTalkGsm.publishToTopic(&modem);
-      }
-         
+      }*/
+      String payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
+      mqtt.publish(topic_publish,payload.c_str());
     }
-    else
+    /*else
     {
       cloudTalk.sendPayload();
-    }
+    }*/
     RSTATE.isPayloadPostTimeout = false;
     DEBUG_PRINTLN(RSTATE.deviceEvents);
     sensorCheckTimer.attach(1, oneSecCallback);
   }
-    mqtt_subscribe_task();
+  mqtt_subscribe_task();
+  mqtt.loop();
 }
 
 void oneSecCallback()
@@ -226,51 +236,98 @@ void oneSecCallback()
   {
     RSTATE.isMqttConnectionTimeout = true;
   }
-
-
-
 }
 
-void mqtt_subscribe_task()  
+void mqtt_subscribe_task()
 {
-    if (!testBit(RSTATE.deviceEvents,DeviceStateEvent::DSE_ConnectMqttFailed)){
-    int isFailed = testBit(RSTATE.deviceEvents,DeviceStateEvent::DSE_SubscribeFailed); 
-        if(isFailed){
-            
-            cloudTalkGsm.subscribeToTopic(&modem,1);
-        }
-        if (SerialAT.available()){
-            String received = SerialAT.readStringUntil('}');
-            Serial.println(received);
+#ifndef TEST_PUB_SUB
+  if (!testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_ConnectMqttFailed))
+  {
+    int isFailed = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SubscribeFailed);
+    if (isFailed)
+    {
+
+      cloudTalkGsm.subscribeToTopic(&modem, 1);
+    }
+    if (SerialAT.available())
+    {
+      String received = SerialAT.readStringUntil('}');
+      Serial.println(received);
+    }
   }
- }
+#endif
+  
+  if(!modem.isNetworkConnected()){
+      DEBUG_PRINTLN("Network not available");
+      modem.waitForNetwork();
+  }
+  if(!modem.isGprsConnected()){
+      DEBUG_PRINTLN("GPRS not connected");
+      modem.gprsConnect("airtelgprs.com");
+  }
+
+  if(modem.isGprsConnected()){
+  if (!mqtt.connected())
+  {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (mqtt.connect(MQTT_CLIENT_NAME))
+    {
+      Serial.println("connected");
+      mqtt.subscribe(topic_subscribe);
+    }
+    else
+    {
+      DEBUG_PRINTF("failed, rc=%d\n",mqtt.state());
+    }
+  }
+  }
 }
 
-void mqtt_check_connection(bool isGSMRequired){
+void mqtt_check_connection(bool isGSMRequired)
+{
+#ifndef TEST_PUB_SUB
   static int connectionRetries = 0;
-  if(!isGSMRequired) return;
+  if (!isGSMRequired)
+    return;
   int mqtt_pub_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_MessagePublishFailed);
   int mqtt_connect_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_ConnectMqttFailed);
-  if (mqtt_connect_failed_device_event){
-      if(!cloudTalkGsm.connectMQTT(&modem)){
-        if(connectionRetries >4){
-          cloudTalkGsm.restartModem(&modem);
-        }
-        sensorCheckTimer.detach();
-        cloudTalkGsm.openNetwork(&modem);
-        cloudTalkGsm.releaseMQTTClient(&modem);
-        cloudTalkGsm.disconnectMQTTClient(&modem);
-        cloudTalkGsm.stopMQTTClient(&modem);
-        cloudTalkGsm.updateNTPTime(&modem);
-        cloudTalkGsm.configureSSL(&modem);
-        cloudTalkGsm.startMQTTService(&modem);
-        cloudTalkGsm.accquireClient(&modem);
-        cloudTalkGsm.connectMQTT(&modem);
-        cloudTalkGsm.subscribeToTopic(&modem,1);
-        sensorCheckTimer.attach(1,oneSecCallback);
-        connectionRetries++;
+  if (mqtt_connect_failed_device_event)
+  {
+    if (!cloudTalkGsm.connectMQTT(&modem))
+    {
+      if (connectionRetries > 4)
+      {
+        cloudTalkGsm.restartModem(&modem);
       }
+      sensorCheckTimer.detach();
+      cloudTalkGsm.openNetwork(&modem);
+      cloudTalkGsm.releaseMQTTClient(&modem);
+      cloudTalkGsm.disconnectMQTTClient(&modem);
+      cloudTalkGsm.stopMQTTClient(&modem);
+      cloudTalkGsm.updateNTPTime(&modem);
+      cloudTalkGsm.configureSSL(&modem);
+      cloudTalkGsm.startMQTTService(&modem);
+      cloudTalkGsm.accquireClient(&modem);
+      cloudTalkGsm.connectMQTT(&modem);
+      cloudTalkGsm.subscribeToTopic(&modem, 1);
+      sensorCheckTimer.attach(1, oneSecCallback);
+      connectionRetries++;
+    }
+  }
+#endif
+  if (!mqtt.connected())
+  {
+    mqtt_subscribe_task();
   }
 }
-  
 
+void mqttCallback(char* topic, byte* payload, unsigned int len) {
+
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  Serial.write(payload, len);
+  Serial.println();
+
+}
