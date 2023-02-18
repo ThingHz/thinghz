@@ -15,6 +15,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
+
 bool initDisplay()
 {
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -136,23 +137,6 @@ void drawDisplay(DisplayMode mode)
         drawValue(valStr,58,75,1);
       }
       break;
-    case DisplayTempBMP:
-      {
-        drawAnotation("Temp",0,0);
-        snprintf(valStr, 20, "%.1fC", RSTATE.bmpTemp);
-        drawValue(valStr,25,0,1);
-        drawAnotation("Sea",0,65);
-        snprintf(valStr, 20, "%.1f", RSTATE.seaLevel);
-        drawValue(valStr,25,65,1);
-        drawLine(30);
-        drawAnotation("Alt",34,0);
-        snprintf(valStr, 20, "%.1fm", RSTATE.altitude);
-        drawValue(valStr,58,0,1);
-        drawAnotation("Bat",34,55);
-        snprintf(valStr, 20, "%d%c", RSTATE.batteryPercentage, 37);
-        drawValue(valStr,58,60,1);
-      }
-      break;
     case DisplayTempHumiCO2:
       {
         drawAnotation("Temp",0,0);
@@ -165,6 +149,27 @@ void drawDisplay(DisplayMode mode)
         drawAnotation("CO2",34,0);
         snprintf(valStr, 20, "%dppm", RSTATE.carbon);
         drawValue(valStr,58,0,1);
+      }
+      break;
+    case DisplayTempHumiLux:
+      {
+        drawAnotation("Temp",0,0);
+        snprintf(valStr, 20, "%.1fC", RSTATE.temperature);
+        drawValue(valStr,25,0,1);
+        drawAnotation("Humidity",0,65);
+        snprintf(valStr, 20, "%.1f%c", RSTATE.humidity, 37);
+        drawValue(valStr,25,65,1);
+        drawLine(30);
+        drawAnotation("Lux",34,0);
+        snprintf(valStr, 20, "%.1fLx", RSTATE.lux);
+        drawValue(valStr,58,0,1);
+        drawAnotation("Led State",34,65);
+        if(!RSTATE.light_state){
+            drawValue("on",58,80,1);
+        }else{
+            drawValue("off",58,80,1);
+        }
+        
       }
       break;
     case DisplayTemp:
@@ -188,7 +193,6 @@ void drawDisplay(DisplayMode mode)
       drawLoGo("MushBot");
       drawTag("ThingHz");
       drawLineSmall(28);
-      
       break;
     case DisplayDeviceHealth:
       drawAnotation("Making Network Connection...",5,30);

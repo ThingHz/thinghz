@@ -179,16 +179,47 @@ String IpAddressToString(const IPAddress& ipAddress)
 
 /**
    @brief:
-   restart modem
+   Power On modem
 */
 void modemPowerKeyToggle() {
-  DEBUG_PRINTLN("Restart modem");
+  DEBUG_PRINTLN("Power On modem");
   digitalWrite(MODEM_PWKEY, LOW);
   delay(100);
   digitalWrite(MODEM_PWKEY, HIGH);
   delay(1000);
   digitalWrite(MODEM_PWKEY, LOW);
-  
 }
 
+/**
+   @brief:
+   toggle light state
+*/
+void toggleLightState(){
+  RSTATE.light_state = !RSTATE.light_state;
+  DEBUG_PRINTF("toggle light state to: %d\n", RSTATE.light_state);
+  digitalWrite(RELAY_PIN,RSTATE.light_state);
+}
+
+/**
+   @brief:
+   get current light state
+*/
+void currentLightState()
+{
+  RSTATE.light_state = digitalRead(RELAY_PIN);
+  DEBUG_PRINTF("Light current state is: %d\n", RSTATE.light_state);
+}
+
+/**
+   @brief:
+   blink Signal Led
+*/
+void blinkSignalLed(uint8_t ledState)
+{
+    digitalWrite(SIG_PIN, ledState);
+}
+
+
 #endif
+
+

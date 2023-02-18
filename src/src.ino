@@ -12,14 +12,13 @@
 #include <rom/rtc.h>
 #include <driver/adc.h>
 #include "oledState.h"
-#include "SparkFun_SCD4x_Arduino_Library.h"
+//#include "SparkFun_SCD4x_Arduino_Library.h"
 #define TINY_GSM_MODEM_SIM7600
 #define TINY_GSM_RX_BUFFER 1024
 #include <TinyGsmClient.h>
 #include "PubSubClient.h"
 #include "certs.h"
 
-SCD4x scd_sensor;
 
 Ticker sensorCheckTimer;
 DeviceState state;
@@ -68,7 +67,7 @@ void setup()
   delay(500);
 
   shtInit();
-  scdInit(&scd_sensor);
+  lightInit();
 
 #ifdef OLED_DISPLAY
   initDisplay();
@@ -96,8 +95,11 @@ void setup()
     drawDisplay(RSTATE.displayEvents);
 #endif
   }
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(SIG_PIN, OUTPUT);
   pinMode(MODEM_PWKEY, OUTPUT);
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN,HIGH);
+  
   modemPowerKeyToggle();
   secureclient.setCACert(cacert);
   secureclient.setCertificate(clientcert);
@@ -108,23 +110,6 @@ void setup()
   
   cloudTalkGsm.restartModem(&modem);
   cloudTalkGsm.initialiseModem(&modem);
-
-#ifndef TEST_PUB_SUB
-  cloudTalkGsm.updateNTPTime(&modem);
-  cloudTalkGsm.configureSSL(&modem);
-  if (!cloudTalkGsm.startMQTTService(&modem))
-  {
-    DEBUG_PRINTLN("Error Starting MQTT service");
-  }
-  if (!cloudTalkGsm.accquireClient(&modem))
-  {
-    DEBUG_PRINTLN("Error Accquiring client");
-  }
-  if (!cloudTalkGsm.connectMQTT(&modem))
-  {
-    DEBUG_PRINTLN("ERROR Connecting to MQTT");
-  }
-#endif
 
   sensorCheckTimer.attach(1, oneSecCallback);
 }
@@ -161,22 +146,22 @@ void loop()
     else
     {
       readSHT();
-      DEBUG_PRINTF("Temperature Value: %1f, Humidity Value: %1f", RSTATE.temperature, RSTATE.humidity);
+      DEBUG_PRINTF("Temperature Value: %1f, Humidity Value: %1f\n", RSTATE.temperature, RSTATE.humidity);
     }
-    if (!isSCDAvailable())
+    if (!isLightAvailable)
     {
-      DEBUG_PRINTLN("SCD Not connected, initialising again");
-      scdInit(&scd_sensor);
+      DEBUG_PRINTLN("BH1750 Not connected, initialising again");
+      lightInit();
     }
     else
     {
-      readSCD(&scd_sensor);
-      DEBUG_PRINTF("CO2 Value: %1d", RSTATE.carbon);
+      readLight();
+      DEBUG_PRINTF("Lux Value: %.1f\n", RSTATE.lux);
     }
 
 #ifdef OLED_DISPLAY
     clearDisplay();
-    RSTATE.displayEvents = DisplayTempHumiCO2;
+    RSTATE.displayEvents = DisplayTempHumiLux;
     drawDisplay(RSTATE.displayEvents);
 #endif
     RSTATE.isReadSensorTimeout = false;
@@ -194,16 +179,10 @@ void loop()
     {
       DEBUG_PRINTLN("Post to cloud  ");
       sensorCheckTimer.detach();
-
-      /*if (!mqtt_pub_failed_device_event && !mqtt_connect_failed_device_event)
-      {
-        DEBUG_PRINTLN("client connected. Publish your meesage");
-        cloudTalkGsm.setMQTTTopic(&modem);
-        cloudTalkGsm.createMQTTPayload(&modem);
-        cloudTalkGsm.publishToTopic(&modem);
-      }*/
       String payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
       mqtt.publish(topic_publish,payload.c_str());
+      cloudTalkGsm.updateNTPTime(&modem);
+      blinkSignalLed(HIGH);
     }
     /*else
     {
@@ -222,44 +201,33 @@ void oneSecCallback()
   static uint oneSecTick = 0;
   oneSecTick++;
 
-  if (oneSecTick % SENSOR_READINGS_INTERVAL_MSECS == 0)
+  if (oneSecTick % SENSOR_READINGS_INTERVAL_S == 0)
   {
     RSTATE.isReadSensorTimeout = true;
   }
 
-  if (oneSecTick % PAYLOAD_POST_INTERVAL_MSECS == 0)
+  if (oneSecTick % PAYLOAD_POST_INTERVAL_S == 0)
   {
     RSTATE.isPayloadPostTimeout = true;
   }
 
-  if (oneSecTick % MQTT_CHECK_CONNECTION == 0)
+  if (oneSecTick % MQTT_CHECK_CONNECTION_INTERVAL_S == 0)
   {
     RSTATE.isMqttConnectionTimeout = true;
   }
 }
 
 void mqtt_subscribe_task()
-{
-#ifndef TEST_PUB_SUB
-  if (!testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_ConnectMqttFailed))
-  {
-    int isFailed = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SubscribeFailed);
-    if (isFailed)
-    {
-
-      cloudTalkGsm.subscribeToTopic(&modem, 1);
-    }
-    if (SerialAT.available())
-    {
-      String received = SerialAT.readStringUntil('}');
-      Serial.println(received);
-    }
-  }
-#endif
-  
+{  
+  static int gsm_retries = 0;
   if(!modem.isNetworkConnected()){
       DEBUG_PRINTLN("Network not available");
       modem.waitForNetwork();
+      gsm_retries++;
+      if(gsm_retries >= RSTATE.gsmConnectionRetries){
+          cloudTalkGsm.restartModem(&modem);
+      }
+
   }
   if(!modem.isGprsConnected()){
       DEBUG_PRINTLN("GPRS not connected");
@@ -286,48 +254,18 @@ void mqtt_subscribe_task()
 
 void mqtt_check_connection(bool isGSMRequired)
 {
-#ifndef TEST_PUB_SUB
-  static int connectionRetries = 0;
-  if (!isGSMRequired)
-    return;
-  int mqtt_pub_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_MessagePublishFailed);
-  int mqtt_connect_failed_device_event = testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_ConnectMqttFailed);
-  if (mqtt_connect_failed_device_event)
-  {
-    if (!cloudTalkGsm.connectMQTT(&modem))
-    {
-      if (connectionRetries > 4)
-      {
-        cloudTalkGsm.restartModem(&modem);
-      }
-      sensorCheckTimer.detach();
-      cloudTalkGsm.openNetwork(&modem);
-      cloudTalkGsm.releaseMQTTClient(&modem);
-      cloudTalkGsm.disconnectMQTTClient(&modem);
-      cloudTalkGsm.stopMQTTClient(&modem);
-      cloudTalkGsm.updateNTPTime(&modem);
-      cloudTalkGsm.configureSSL(&modem);
-      cloudTalkGsm.startMQTTService(&modem);
-      cloudTalkGsm.accquireClient(&modem);
-      cloudTalkGsm.connectMQTT(&modem);
-      cloudTalkGsm.subscribeToTopic(&modem, 1);
-      sensorCheckTimer.attach(1, oneSecCallback);
-      connectionRetries++;
-    }
-  }
-#endif
   if (!mqtt.connected())
   {
     mqtt_subscribe_task();
   }
+  blinkSignalLed(LOW);
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
-
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("]: ");
-  Serial.write(payload, len);
-  Serial.println();
-
+  cloudTalkGsm.handleSubscribe((char*)payload);
+  String publish_payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
+  mqtt.publish(topic_publish,publish_payload.c_str());
+  blinkSignalLed(HIGH);
 }
+
+

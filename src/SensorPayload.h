@@ -11,11 +11,7 @@ enum SensorProfile {
   SensorTemp,
   SensorTH,
   SensorGas,
-  SensorGyroAccel,
-  SensorTHM,
-  SensorTHC,
-  SensorBMP,
-  SensorBMPTH
+  SensorLight
 };
 
 
@@ -23,8 +19,7 @@ enum SensorProfile {
 const char* sensorProfileToString(uint8_t sProfile) {
   //Here After and before const means that you can not change pointer as well as data
   static const char* const map[] = {
-    "SensorNone", "SensorTemp", "SensorTH", "SensorGas"
-    "SensorGyroAccel", "SensorTHM","SensorTHC","SensorBMP","SensorBMPTH"
+    "SensorNone", "SensorTemp", "SensorTH", "SensorGas", "SensorLight"
   };
   return map[sProfile];
 }
@@ -58,40 +53,6 @@ struct SensorPayloadTH : public SensorPayloadT {
   float humidity;
 } __attribute__ ((packed));
 
-struct SensorPayloadTHM : public SensorPayloadTH {
-  SensorPayloadTHM(): moisture(INVALID_MOISTURE_READING) {
-    sensorProfile = SensorProfile::SensorTHM;
-  }
-
-  float moisture;
-} __attribute__ ((packed));
-
-struct SensorPayloadBMP : public SensorPayload {
-  SensorPayloadBMP() : 
-    bmp_temp(INVALID_BMP_TEMP_READING),
-    bmp_pressure(INVALID_BMP_P_READING),
-    bmp_sea(INVALID_SEA_READING),
-    bmp_altitude(INVALID_ALTITUDE_READING)
-    {
-      sensorProfile = SensorProfile::SensorBMP;
-    }
-
-    float bmp_temp;
-    float bmp_pressure;
-    float bmp_sea;
-    float bmp_altitude; 
-} __attribute__ ((packed));
-
-
-struct SensorPayloadTHBMP : public SensorPayloadBMP {
-  SensorPayloadTHBMP() : 
-    bmp_humid(INVALID_HUMIDITY_READING)
-    {
-      sensorProfile = SensorProfile::SensorBMPTH;
-    }
-
-    float bmp_humid;
-} __attribute__ ((packed));
 
 struct SensorPayloadGas : public SensorPayloadTH {
   SensorPayloadGas(): gas(INVALID_GAS_READING) {
@@ -101,43 +62,28 @@ struct SensorPayloadGas : public SensorPayloadTH {
   uint16_t gas;
 } __attribute__ ((packed));
 
-struct SensorPayloadGyroAccel : public SensorPayload {
-  SensorPayloadGyroAccel(): gyro(INVALID_GYRO_READING), accel(INVALID_ACCEL_READING) {
-    sensorProfile = SensorProfile::SensorGyroAccel;
+struct SensorPayloadLight : public SensorPayloadTH {
+  SensorPayloadLight(): 
+  lux(INVALID_GAS_READING),
+  lightState(DEFAULT_STATE_READING) {
+    sensorProfile = SensorProfile::SensorLight;
   }
 
-  int16_t gyro;
-  int16_t accel;
-} __attribute__ ((packed));
-
-struct SensorPayloadTHC : public SensorPayloadTH {
-  SensorPayloadTHC(): capcitance(INVALID_CAP_READING) {
-    sensorProfile = SensorProfile::SensorTHC;
-  }
-
-  float capcitance;
+  float lux;
+  uint8_t  lightState;
 } __attribute__ ((packed));
 
 
 SensorPayload           sensorPayload;
 SensorPayloadT          sensorPayloadT;
 SensorPayloadTH         sensorPayloadTH;
-SensorPayloadBMP        sensorPayloadBMP;
-SensorPayloadTHBMP      sensorPayloadTHBMP;      
-SensorPayloadGyroAccel  sensorPayloadGyroAccel;
-SensorPayloadTHM        sensorPayloadTHM;
 SensorPayloadGas        sensorPayloadGas;
-SensorPayloadTHC        sensorPayloadTHC;
-
+SensorPayloadLight      sensorPayloadLight;
 
 #define PAYLOAD_NONE    sensorPayload
 #define PAYLOAD_T       sensorPayloadT
 #define PAYLOAD_TH      sensorPayloadTH
-#define PAYLOAD_THM     sensorPayloadTHM
-#define PAYLOAD_GA      sensorPayloadGyroAccel
 #define PAYLOAD_GAS     sensorPayloadGas
-#define PAYLOAD_THC     sensorPayloadTHC
-#define PAYLOAD_TH_BMP  sensorPayloadTHBMP
-#define PAYLOAD_BMP     sensorPayloadBMP
+#define PAYLOAD_LIGHT   sensorPayloadLight
 
 #endif

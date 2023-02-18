@@ -22,7 +22,7 @@ const char* deviceTypeEnumToString(uint8_t devType) {
 
 #define AP_MODE_SSID "ThingHz-"
 
-#define TEST_PUB_SUB 1
+
 
 String formApSsidName(String deviceId) {
   return String(AP_MODE_SSID + deviceId);
@@ -39,10 +39,13 @@ String formApSsidName(String deviceId) {
 #define MODEM_PWKEY          4
 #define MODEM_TX             26
 #define MODEM_RX             27
-#define LED_BUILTIN          2
 
 
-#define DEBUG_SERIAL    1 // should come from build system
+//Comment out to disable debugging constraint
+//#define DEBUG 1
+
+//Comment to disable serial dump
+#define DEBUG_SERIAL    1 
 #define SerialAT        Serial1 //define Serial 1 for TinyGSM Serial
 
 //Comment out to disable display
@@ -54,7 +57,7 @@ String formApSsidName(String deviceId) {
 
 
 //Enum for Device Sensor profile
-#define DEVICE_SENSOR_TYPE  SensorGas
+#define DEVICE_SENSOR_TYPE  SensorLight
 
 // hardware rev is tied to device type, they both form a combo that decies the firmware behaviour
 #define HW_REV                          1 
@@ -69,11 +72,8 @@ String formApSsidName(String deviceId) {
  * @brief 
  * Wiring configuration pin 
 */
-#define TEMP_SENSOR_PIN     32                  //DS18B20 pin
-#define BATTERY_VOL_PIN     36                  //Battery voltage pin
-#define SIG_PIN             26                  //Status Signal pin
-#define CONFIG_PIN          25                  //portal configuration pin
-#define VOLTAGE_DIV_PIN     5                   //Voltage devider pin
+#define RELAY_PIN           15                   //Relay pin
+#define SIG_PIN             2                   //Status Signal pin
 
 
 /**
@@ -98,16 +98,24 @@ String formApSsidName(String deviceId) {
 #define SECS_PORTAL_WAIT                        60 
 
 //http connection timeout in milli seconds
-#define HTTP_CONNEC_TIMEOUT_IN_MS                 100
+#define HTTP_CONNEC_TIMEOUT_IN_MS               100
 
-//Sensor reading interval in seconds/100
-#define SENSOR_READINGS_INTERVAL_MSECS            2
+//Sensor reading interval in seconds
+#define SENSOR_READINGS_INTERVAL_S              2
 
-//payload post interval in seconds 120:2mins 300:5mins 600:10mins/100 
-#define PAYLOAD_POST_INTERVAL_MSECS               300
+#ifndef DEBUG
+//payload post interval in seconds 120:2mins 300:5mins 600:10mins 
+#define PAYLOAD_POST_INTERVAL_S                 300
+#else
+//payload post interval in seconds 120:2mins 300:5mins 600:10mins (case of debug) 
+#define PAYLOAD_POST_INTERVAL_S                 30
+#endif
 
-//mqtt check connection in seconds 120:2mins 300:5mins 600:10mins/100 
-#define MQTT_CHECK_CONNECTION                     20
+#define MAX_GSM_RETRIES                         3
+
+
+//mqtt check connection in seconds 120:2mins 300:5mins 600:10mins 
+#define MQTT_CHECK_CONNECTION_INTERVAL_S        20
 
 
 
@@ -127,10 +135,10 @@ String formApSsidName(String deviceId) {
  * @brief 
  * MQTT Constants
  */
-#define MQTT_CLIENT_NAME                        "ThingHz_client01"
+#define MQTT_CLIENT_NAME                        "ThingHz_client02"
 #define MQTT_HOST                               "tcp://a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com:8883"      
 #define MQTT_HOST_USING_PUBSUB                  "a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com"
-#define MQTT_TOPIC                              "aws/thing/thing_test/"
+#define MQTT_TOPIC                              "aws/thing/thinghz/"
 #define NTP_SERVER                              "pool.ntp.org"
 
 /**
@@ -178,6 +186,9 @@ String formApSsidName(String deviceId) {
 #define INVALID_BMP_TEMP_READING    99
 #define INVALID_BMP_P_READING      -1
 #define INVALID_CO2_READING         0
+#define INVALUD_LUX_READING         0
+#define DEFAULT_STATE_READING       1
+#define DEFAULT_THRESH_READING      0
 
 /**
  * @brief 
@@ -209,7 +220,15 @@ String formApSsidName(String deviceId) {
 #define MAX_WAKEUP_COUNT              2
 #define MIN_WAKEUP_COUNT              0
 
-#define DUMP_AT_COMMANDS              1
+
+/**
+ * @brief 
+ * dump at commands in serial
+ */
+
+#ifdef DEBUG
+  #define DUMP_AT_COMMANDS              1
+#endif
 
 /**
  * @brief 

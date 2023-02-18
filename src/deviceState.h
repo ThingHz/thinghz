@@ -12,21 +12,14 @@ enum DeviceStateEvent {
   DSE_None                    = 0,
   DSE_SHTDisconnected         = 1,
   DSE_SHTFaulty               = 1 << 1,
-  DSE_TMPDisconnected         = 1 << 2,
-  DSE_TMPFaulty               = 1 << 3,
-  DSE_DSBFaulty               = 1 << 4,
-  DSE_TEMPAlarm               = 1 << 5,
-  DSE_HUMIDAlarm              = 1 << 6,
   DSE_GASFaulty               = 1 << 7,
-  DSE_GYROFaulty              = 1 << 8,
   DSE_LIGHTFaulty             = 1 << 9,
-  DSE_CAPfaulty               = 1 << 10,
-  DSE_DisplayDisconnected     = 1 << 11,
-  DSE_SimStatusZero           = 1 << 12,
-  DSE_ConnectMqttFailed       = 1 << 13,
-  DSE_MessagePublishFailed    = 1 << 14,
-  DSE_StartMqttFailed         = 1 << 15,
-  DSE_SubscribeFailed         = 1 << 16,
+  DSE_DisplayDisconnected     = 1 << 10,
+  DSE_SimStatusZero           = 1 << 11,
+  DSE_ConnectMqttFailed       = 1 << 12,
+  DSE_MessagePublishFailed    = 1 << 13,
+  DSE_StartMqttFailed         = 1 << 14,
+  DSE_SubscribeFailed         = 1 << 15,
 };
 
 enum DisplayMode {
@@ -37,11 +30,10 @@ enum DisplayMode {
   DisplayCap,
   DisplayDeviceConfig,
   DisplayCenterTextLogo,
-  DisplayTempBMP,
-  DisplayTempHumidBMP,
   DisplayDeviceHealth,
   DisplayDeviceStatus,
   DisplayTempHumiCO2,
+  DisplayTempHumiLux,
   DisplayPortalConfig
 };
 
@@ -66,16 +58,15 @@ class RunTimeState {
       batteryPercentage(100),
       temperature(INVALID_TEMP_READING),
       humidity(INVALID_HUMIDITY_READING),
-      capacitance(INVALID_CAP_READING),
-      altitude(INVALID_ALTITUDE_READING),
-      seaLevel(INVALID_SEA_READING),
-      bmpTemp(INVALID_BMP_TEMP_READING),
-      bmphPa(INVALID_BMP_TEMP_READING),
       carbon(INVALID_CO2_READING),
+      lux(INVALUD_LUX_READING),
+      light_state(DEFAULT_STATE_READING),
+      light_thresh(DEFAULT_THRESH_READING),
       isReadSensorTimeout(false),
       isPayloadPostTimeout(false),
       isSwitchToGSMRequired(false),
-      isMqttConnectionTimeout(false)
+      isMqttConnectionTimeout(false),
+      gsmConnectionRetries(MAX_GSM_RETRIES)
     {
 
     }
@@ -90,16 +81,15 @@ class RunTimeState {
     int batteryPercentage;
     float temperature;
     float humidity;
-    float capacitance;
-    float altitude;
-    float seaLevel;
-    float bmpTemp;
-    float bmphPa;
-    uint16_t carbon; 
+    uint16_t carbon;
+    float lux;
+    uint8_t light_state;
+    uint light_thresh; 
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
     bool isSwitchToGSMRequired;
     bool isMqttConnectionTimeout;
+    int gsmConnectionRetries;
 };
 
 /**
