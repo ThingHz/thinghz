@@ -3,6 +3,7 @@
 #include "hardwareDefs.h"
 #include <SPIFFS.h>
 #include "deviceState.h"
+#include <WiFi.h>
 
 
 const IPAddress apIP(192, 168, 4, 1);

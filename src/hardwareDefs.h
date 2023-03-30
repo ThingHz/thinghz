@@ -39,6 +39,7 @@ String formApSsidName(String deviceId) {
 #define MODEM_PWKEY          4
 #define MODEM_TX             26
 #define MODEM_RX             27
+#define MODEM_FLIGHT         25
 
 
 //Comment out to disable debugging constraint
@@ -72,8 +73,9 @@ String formApSsidName(String deviceId) {
  * @brief 
  * Wiring configuration pin 
 */
-#define RELAY_PIN           15                   //Relay pin
-#define SIG_PIN             2                   //Status Signal pin
+#define RELAY_PIN             15                   //Relay pin
+#define RELAY_PIN_1           5
+#define SIG_PIN               2                   //Status Signal pin
 
 
 /**
@@ -101,7 +103,7 @@ String formApSsidName(String deviceId) {
 #define HTTP_CONNEC_TIMEOUT_IN_MS               100
 
 //Sensor reading interval in seconds
-#define SENSOR_READINGS_INTERVAL_S              2
+#define SENSOR_READINGS_INTERVAL_S              5
 
 #ifndef DEBUG
 //payload post interval in seconds 120:2mins 300:5mins 600:10mins 
@@ -135,11 +137,11 @@ String formApSsidName(String deviceId) {
  * @brief 
  * MQTT Constants
  */
-#define MQTT_CLIENT_NAME                        "ThingHz_client02"
 #define MQTT_HOST                               "tcp://a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com:8883"      
 #define MQTT_HOST_USING_PUBSUB                  "a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com"
 #define MQTT_TOPIC                              "aws/thing/thinghz/"
 #define NTP_SERVER                              "pool.ntp.org"
+#define MQTT_CLIENT_NAME                        "thinghz_cleint01"
 
 /**
  * @brief 
@@ -159,6 +161,8 @@ String formApSsidName(String deviceId) {
 
 //ThingHz default Device Id
 #define DEVICE_ID_DEFAULT                        "THING00001"
+
+
 
 
 
@@ -189,6 +193,7 @@ String formApSsidName(String deviceId) {
 #define INVALUD_LUX_READING         0
 #define DEFAULT_STATE_READING       1
 #define DEFAULT_THRESH_READING      0
+#define CURRENT_TIME                "0000"
 
 /**
  * @brief 

@@ -65,12 +65,14 @@ struct SensorPayloadGas : public SensorPayloadTH {
 struct SensorPayloadLight : public SensorPayloadTH {
   SensorPayloadLight(): 
   lux(INVALID_GAS_READING),
-  lightState(DEFAULT_STATE_READING) {
+  lightState1(DEFAULT_STATE_READING),
+  lightState2(DEFAULT_STATE_READING) {
     sensorProfile = SensorProfile::SensorLight;
   }
 
   float lux;
-  uint8_t  lightState;
+  uint8_t lightState1;
+  uint8_t lightState2;
 } __attribute__ ((packed));
 
 

@@ -12,6 +12,7 @@
 #define TINY_GSM_MODEM_SIM7600
 #define TINY_GSM_RX_BUFFER 1024
 #include <TinyGsmClient.h>
+#include "oledState.h"
 
 const char topic_publish[] = "aws/thing/thinghz/";
 const char topic_subscribe[] = "aws/thing/thinghz/light";
@@ -104,6 +105,7 @@ public:
     clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SubscribeFailed);
     return res;
   }
+
 
   /**
       @brief: Configure SSL Configuration
@@ -279,7 +281,7 @@ public:
       PAYLOAD_T.temp = RSTATE.temperature;
       DEBUG_PRINTLN("Creating payload for Temp Sensor");
       snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}",
-               (PSTATE.deviceId).c_str(),
+               (macAddrWithoutColons()).c_str(),
                PAYLOAD_T.temp,
                PAYLOAD_T.sensorProfile,
                RSTATE.batteryPercentage);
@@ -290,7 +292,7 @@ public:
       PAYLOAD_TH.humidity = RSTATE.humidity;
       DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
       snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}",
-               (PSTATE.deviceId).c_str(),
+               (macAddrWithoutColons()).c_str(),
                PAYLOAD_TH.temp,
                PAYLOAD_TH.humidity,
                PAYLOAD_TH.sensorProfile,
@@ -302,7 +304,7 @@ public:
       PAYLOAD_GAS.temp = RSTATE.temperature;
       PAYLOAD_GAS.humidity = RSTATE.humidity;
       snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"gas\":\"%u\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
-               (PSTATE.deviceId).c_str(),
+               (macAddrWithoutColons()).c_str(),
                PAYLOAD_GAS.gas,
                PAYLOAD_GAS.temp,
                PAYLOAD_GAS.humidity,
@@ -313,16 +315,18 @@ public:
       DEBUG_PRINTLN("Creating payload for Light Control and Analysis");
       PAYLOAD_LIGHT.temp = RSTATE.temperature;
       PAYLOAD_LIGHT.humidity = RSTATE.humidity;
-      PAYLOAD_LIGHT.lightState = !RSTATE.light_state;
+      PAYLOAD_LIGHT.lightState1 = !RSTATE.light_state_1;
+      PAYLOAD_LIGHT.lightState2 = !RSTATE.light_state_2;
       PAYLOAD_LIGHT.lux = RSTATE.lux;
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"lux\":\"%.1f\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d,\"light_state\":%u}",
-               (PSTATE.deviceId).c_str(),
+      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"lux\":\"%.1f\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d,\"light_state_1\":%u,\"light_state_2\":%u}",
+               (macAddrWithoutColons()).c_str(),
                PAYLOAD_LIGHT.lux,
                PAYLOAD_LIGHT.temp,
                PAYLOAD_LIGHT.humidity,
                RSTATE.batteryPercentage,
                PAYLOAD_LIGHT.sensorProfile,
-               PAYLOAD_LIGHT.lightState);
+               PAYLOAD_LIGHT.lightState1,
+               PAYLOAD_LIGHT.lightState2);
       break;
     default:
       DEBUG_PRINTLN("Not a valid Sensor");
@@ -378,6 +382,10 @@ public:
 
   bool handleSubscribe(char *subscribeString)
   {
+    RSTATE.displayEvents = DisplayEventActionReceived;
+    String clean_subscribeString = String(subscribeString).substring(0,(String(subscribeString).indexOf("}"))+1);
+    DEBUG_PRINTLN(clean_subscribeString.c_str()); 
+    drawDisplay(RSTATE.displayEvents);
     StaticJsonDocument<1024> subscribeJson;
     DeserializationError err = deserializeJson(subscribeJson, subscribeString);
 
@@ -392,16 +400,35 @@ public:
     }
 
     DEBUG_PRINTLN("Obtaining action variables");
-    if (subscribeJson.containsKey("light_State")) {
-         toggleLightState();  
-         DEBUG_PRINTF("light state is %d\n",RSTATE.light_state); 
+    int lightState1=0;
+    int lightState2=0;
+    if (subscribeJson.containsKey("light_state_1")) {
+         lightState1 = subscribeJson["light_state_1"];
+         
       }
+    if (subscribeJson.containsKey("light_state_2")) {
+         lightState2 = subscribeJson["light_state_2"];
+      }
+    toggleLightState((uint8_t)lightState1, (uint8_t)lightState2);   
     if (subscribeJson.containsKey("light_thresh"))
         RSTATE.light_thresh = subscribeJson["light_thresh"];
     DEBUG_PRINTF("light intesity is %d",RSTATE.light_thresh);
     
     return true; 
   }
+
+
+  String createSubscribeTopic(bool ack){
+      char subscribeTopic[128];
+      char ackTopic[128];
+      if(ack){
+        snprintf(ackTopic, 128, "aws/thing/thinghz/%s/ack",macAddrWithoutColons().c_str());
+        return String(ackTopic);  
+      }
+      snprintf(subscribeTopic, 128, "aws/thing/thinghz/%s/light",macAddrWithoutColons().c_str());
+      return String(subscribeTopic);
+  }
+
 };
 
 #endif

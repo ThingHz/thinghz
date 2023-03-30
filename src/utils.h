@@ -194,10 +194,15 @@ void modemPowerKeyToggle() {
    @brief:
    toggle light state
 */
-void toggleLightState(){
-  RSTATE.light_state = !RSTATE.light_state;
-  DEBUG_PRINTF("toggle light state to: %d\n", RSTATE.light_state);
-  digitalWrite(RELAY_PIN,RSTATE.light_state);
+void toggleLightState(uint8_t lightState_1, uint8_t lightState_2){
+  RSTATE.light_state_1 = !lightState_1;
+  RSTATE.light_state_2 = !lightState_2;
+  PSTATE.light_state_1 = !lightState_1;
+  PSTATE.light_state_2 = !lightState_2;
+  //RSTATE.light_state = !RSTATE.light_state;
+  DEBUG_PRINTF("toggle light1 state to: %d and light2 state to: %d\n", !lightState_1,!lightState_2);
+  digitalWrite(RELAY_PIN,RSTATE.light_state_1);
+  digitalWrite(RELAY_PIN_1,RSTATE.light_state_2);
 }
 
 /**
@@ -206,8 +211,9 @@ void toggleLightState(){
 */
 void currentLightState()
 {
-  RSTATE.light_state = digitalRead(RELAY_PIN);
-  DEBUG_PRINTF("Light current state is: %d\n", RSTATE.light_state);
+  RSTATE.light_state_1 = digitalRead(RELAY_PIN);
+  RSTATE.light_state_2 = digitalRead(RELAY_PIN_1);
+  DEBUG_PRINTF("Light 1 current state is: %d and for Light 2 its: %d\n", RSTATE.light_state_1,RSTATE.light_state_2);
 }
 
 /**

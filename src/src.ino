@@ -18,6 +18,7 @@
 #include <TinyGsmClient.h>
 #include "PubSubClient.h"
 #include "certs.h"
+#include "uuid.h"
 
 
 Ticker sensorCheckTimer;
@@ -98,7 +99,9 @@ void setup()
   pinMode(SIG_PIN, OUTPUT);
   pinMode(MODEM_PWKEY, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN,HIGH);
+  pinMode(RELAY_PIN_1, OUTPUT);
+  digitalWrite(RELAY_PIN,PSTATE.light_state_1);
+  digitalWrite(RELAY_PIN_1,PSTATE.light_state_2);
   
   modemPowerKeyToggle();
   secureclient.setCACert(cacert);
@@ -169,6 +172,8 @@ void loop()
 
   if (RSTATE.isMqttConnectionTimeout)
   {
+    RSTATE.isNetworkActive = true;
+    RSTATE.isMqttConnectionTimeout = true;
     mqtt_check_connection(RSTATE.isSwitchToGSMRequired);
     RSTATE.isMqttConnectionTimeout = false;
   }
@@ -184,12 +189,9 @@ void loop()
       cloudTalkGsm.updateNTPTime(&modem);
       blinkSignalLed(HIGH);
     }
-    /*else
-    {
-      cloudTalk.sendPayload();
-    }*/
     RSTATE.isPayloadPostTimeout = false;
     DEBUG_PRINTLN(RSTATE.deviceEvents);
+    deviceState.store();
     sensorCheckTimer.attach(1, oneSecCallback);
   }
   mqtt_subscribe_task();
@@ -221,6 +223,7 @@ void mqtt_subscribe_task()
 {  
   static int gsm_retries = 0;
   if(!modem.isNetworkConnected()){
+      RSTATE.isNetworkActive = false;
       DEBUG_PRINTLN("Network not available");
       modem.waitForNetwork();
       gsm_retries++;
@@ -239,13 +242,18 @@ void mqtt_subscribe_task()
   {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (mqtt.connect(MQTT_CLIENT_NAME))
+    DEBUG_PRINTLN(StringUUIDGen());
+    if (mqtt.connect(StringUUIDGen().c_str()))
     {
+      RSTATE.isMQTTConnected = true;
       Serial.println("connected");
-      mqtt.subscribe(topic_subscribe);
+      String mqtt_sub_topic = cloudTalkGsm.createSubscribeTopic(false);
+      DEBUG_PRINTF("subscribing to topic: %s\n",mqtt_sub_topic.c_str()); 
+      mqtt.subscribe(mqtt_sub_topic.c_str());
     }
     else
     {
+      RSTATE.isMQTTConnected = false;
       DEBUG_PRINTF("failed, rc=%d\n",mqtt.state());
     }
   }
@@ -253,7 +261,8 @@ void mqtt_subscribe_task()
 }
 
 void mqtt_check_connection(bool isGSMRequired)
-{
+{ 
+  //getGSMDateAndTime(&modem);
   if (!mqtt.connected())
   {
     mqtt_subscribe_task();
@@ -262,9 +271,17 @@ void mqtt_check_connection(bool isGSMRequired)
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
+  sensorCheckTimer.detach();
+  DEBUG_PRINT("Action received");
+  clearDisplay();
   cloudTalkGsm.handleSubscribe((char*)payload);
-  String publish_payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
-  mqtt.publish(topic_publish,publish_payload.c_str());
+  String mqtt_ack_topic = cloudTalkGsm.createSubscribeTopic(true);
+  if (!RSTATE.light_state_1 && !RSTATE.light_state_2){
+      mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"on\"}");
+  }else{
+      mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"off\"}");
+  } 
+  sensorCheckTimer.attach(1, oneSecCallback);
   blinkSignalLed(HIGH);
 }
 

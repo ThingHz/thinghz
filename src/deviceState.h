@@ -34,7 +34,8 @@ enum DisplayMode {
   DisplayDeviceStatus,
   DisplayTempHumiCO2,
   DisplayTempHumiLux,
-  DisplayPortalConfig
+  DisplayPortalConfig,
+  DisplayEventActionReceived
 };
 
 //advance declaration
@@ -60,13 +61,17 @@ class RunTimeState {
       humidity(INVALID_HUMIDITY_READING),
       carbon(INVALID_CO2_READING),
       lux(INVALUD_LUX_READING),
-      light_state(DEFAULT_STATE_READING),
+      light_state_1(DEFAULT_STATE_READING),
+      light_state_2(DEFAULT_STATE_READING),
       light_thresh(DEFAULT_THRESH_READING),
       isReadSensorTimeout(false),
       isPayloadPostTimeout(false),
       isSwitchToGSMRequired(false),
       isMqttConnectionTimeout(false),
-      gsmConnectionRetries(MAX_GSM_RETRIES)
+      isMQTTConnected(false),
+      isNetworkActive(false),
+      gsmConnectionRetries(MAX_GSM_RETRIES),
+      gsm_time(CURRENT_TIME)
     {
 
     }
@@ -83,13 +88,17 @@ class RunTimeState {
     float humidity;
     uint16_t carbon;
     float lux;
-    uint8_t light_state;
+    uint8_t light_state_1;
+    uint8_t light_state_2;
     uint light_thresh; 
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
     bool isSwitchToGSMRequired;
     bool isMqttConnectionTimeout;
+    bool isMQTTConnected;
+    bool isNetworkActive;
     int gsmConnectionRetries;
+    String gsm_time;
 };
 
 /**
@@ -106,7 +115,9 @@ class PersistantState {
       humidCalibration(CALIBRATION_LEVEL_HUMID),
       carbonCalibration(CALIBRATION_LEVEL_CARBON),
       isOtaAvailable(0),
-      newfWVersion(0)
+      newfWVersion(0),
+      light_state_1(1),
+      light_state_2(1)
     {
 
     }
@@ -121,7 +132,9 @@ class PersistantState {
               (humidCalibration == rhs.humidCalibration) &&
               (carbonCalibration == rhs.carbonCalibration) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
-              (newfWVersion == rhs.newfWVersion));
+              (newfWVersion == rhs.newfWVersion) &&
+              (light_state_1 == rhs.light_state_1) &&
+              (light_state_2 == rhs.light_state_2));
     }
     // public data members
     String apSSID;
@@ -132,7 +145,8 @@ class PersistantState {
     int carbonCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
-   
+    uint8_t light_state_1;
+    uint8_t light_state_2;
 };
 
 /**
@@ -156,6 +170,8 @@ struct PersistantStateStorageFormat {
     int carbonCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
+    uint8_t light_state_1;
+    uint8_t light_state_2;
 } __attribute__ ((packed));
 
 PersistantState::PersistantState(const PersistantStateStorageFormat& persistantStore)
@@ -168,6 +184,8 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
   carbonCalibration = persistantStore.carbonCalibration;
   isOtaAvailable = persistantStore.isOtaAvailable;
   newfWVersion = persistantStore.newfWVersion;
+  light_state_1 = persistantStore.light_state_1;
+  light_state_2 = persistantStore.light_state_2;
 }
 
 PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState &persistantState)
@@ -181,6 +199,8 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   carbonCalibration = persistantState.carbonCalibration;
   isOtaAvailable = persistantState.isOtaAvailable;
   newfWVersion = persistantState.newfWVersion;
+  light_state_1 = persistantState.light_state_1;
+  light_state_2 = persistantState.light_state_2;
 }
 
 /**
