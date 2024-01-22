@@ -119,11 +119,10 @@ bool isSHTWorking()
 */
 bool readSHT()
 {
-  auto tempHumid = sht31.readTempHumidity();
+  
+  float temp = sht31.readTemperature();
 
-  float temp = tempHumid.first;
-
-  float humid = tempHumid.second;
+  float humid = sht31.readHumidity();
 
   if (isnan(temp))
   { // check if 'is not a number'

@@ -2,6 +2,13 @@
 #define HARDWAREDEFS_H
 
 
+
+
+/**
+ * @brief 
+ * Device Type Information 
+*/
+
 enum DeviceType {
   ThingHz_Standalone = 1,                // Sensor Node will work as a standalone device and talks to cloud
   ThingHz_EspNow_Node,                   // Sensor Node will talk back and forth with the Gateway using ESPNow
@@ -11,7 +18,14 @@ enum DeviceType {
   DeviceTypeUnknown = 5000
 };
 
-// used to convert enum to strings for sending to could in http requests or printing in debug messages
+/**
+ * @brief 
+ * Device Type Information
+ * @param 
+ * Device Type information form DeviceType enum
+ * @return 
+ * Device Type information in String
+*/
 const char* deviceTypeEnumToString(uint8_t devType) {
   static const char* const map[] = { "ThingHz_Standalone", "ThingHz_EspNow_Node",
                                      "ThingHz_EspNow_WiFiLteHaul_Gateway", "ThingHz_CC1100_Node",
@@ -20,9 +34,17 @@ const char* deviceTypeEnumToString(uint8_t devType) {
   return map[devType];
 }
 
+// AP name SSID for captive portal configuration later we will concat with Mac Address of device
 #define AP_MODE_SSID "ThingHz-"
 
-
+/**
+ * @brief 
+ * Device Type Information
+ * @param 
+ * String Device ID(MAC Address most of the time) 
+ * @return 
+ * Device Type information in String
+*/
 
 String formApSsidName(String deviceId) {
   return String(AP_MODE_SSID + deviceId);
@@ -49,9 +71,6 @@ String formApSsidName(String deviceId) {
 #define DEBUG_SERIAL    1 
 #define SerialAT        Serial1 //define Serial 1 for TinyGSM Serial
 
-//Comment out to disable display
-#define OLED_DISPLAY 1
-
 //batery max and min voltages
 #define BATT_VOL_0                 3.0
 #define BATT_VOL_100               4.2
@@ -77,6 +96,8 @@ String formApSsidName(String deviceId) {
 #define RELAY_PIN_1           5
 #define SIG_PIN               2                   //Status Signal pin
 
+//Comment out to disable display
+#define OLED_DISPLAY 1
 
 /**
  * @brief 
@@ -115,10 +136,8 @@ String formApSsidName(String deviceId) {
 
 #define MAX_GSM_RETRIES                         3
 
-
 //mqtt check connection in seconds 120:2mins 300:5mins 600:10mins 
 #define MQTT_CHECK_CONNECTION_INTERVAL_S        20
-
 
 
 //AT wait response time
@@ -156,14 +175,11 @@ String formApSsidName(String deviceId) {
  * @brief 
  * WiFi Configuration default preprocessors
  */
-#define WAN_WIFI_SSID_DEFAULT                    "TimTim"     
-#define WAN_WIFI_PASS_DEFAULT                    "wireless18"  
+#define WAN_WIFI_SSID_DEFAULT                    "thinghz"     
+#define WAN_WIFI_PASS_DEFAULT                    "thinghz123"  
 
 //ThingHz default Device Id
 #define DEVICE_ID_DEFAULT                        "THING00001"
-
-
-
 
 
 /**

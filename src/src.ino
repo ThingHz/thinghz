@@ -1,10 +1,12 @@
 #include <Wire.h>
-#include "SSLClient.h"
 #include "deviceState.h"
 #include "captivePortal.h"
-//#include "cloudInteract.h"
-#include "cloudInteractGSM.h"
 #include "hardwareDefs.h"
+#include "SSLClient.h"
+#include "cloudInteractGSM.h"
+#define TINY_GSM_MODEM_SIM7600
+#define TINY_GSM_RX_BUFFER 1024
+#include <TinyGsmClient.h>
 #include "sensorRead.h"
 #include "utils.h"
 #include "WiFiOTA.h"
@@ -13,9 +15,6 @@
 #include <driver/adc.h>
 #include "oledState.h"
 //#include "SparkFun_SCD4x_Arduino_Library.h"
-#define TINY_GSM_MODEM_SIM7600
-#define TINY_GSM_RX_BUFFER 1024
-#include <TinyGsmClient.h>
 #include "PubSubClient.h"
 #include "certs.h"
 #include "uuid.h"
@@ -25,21 +24,23 @@ Ticker sensorCheckTimer;
 DeviceState state;
 DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
-//CloudTalk cloudTalk;
+
 
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, Serial);
 TinyGsm modem(debugger);
 TinyGsmClient gsmClient(modem);
-SSLClient secureclient(&gsmClient);
-PubSubClient mqtt(secureclient);
+SSLClient secureClient(&gsmClient);
+PubSubClient mqtt(secureClient);
 #else
 TinyGsm modem(SerialAT);
 TinyGsmClient gsmClient(modem);
-SSLClient secureclient(&gsmClient);
-PubSubClient mqtt(secureclient);
+SSLClient secureClient(&gsmClient);
+PubSubClient mqtt(secureClient);
 #endif
+
+
 
 CloudTalkGSM cloudTalkGsm;
 
@@ -77,7 +78,9 @@ void setup()
   drawDisplay(RSTATE.displayEvents);
   delay(2000);
 #endif
+  
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
+  
   if (((int)rtc_get_reset_reason(0) == 12) || ((int)rtc_get_reset_reason(0) == 1))
   { // =  SW_CPU_RESET
     RSTATE.isPortalActive = true;
@@ -90,12 +93,14 @@ void setup()
     captivePortal.servePortal(true);
     captivePortal.beginServer();
     delay(100);
+
 #ifdef OLED_DISPLAY
     clearDisplay();
     RSTATE.displayEvents = DisplayPortalConfig;
     drawDisplay(RSTATE.displayEvents);
 #endif
   }
+
   pinMode(SIG_PIN, OUTPUT);
   pinMode(MODEM_PWKEY, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
@@ -104,16 +109,16 @@ void setup()
   digitalWrite(RELAY_PIN_1,PSTATE.light_state_2);
   
   modemPowerKeyToggle();
-  secureclient.setCACert(cacert);
-  secureclient.setCertificate(clientcert);
-  secureclient.setPrivateKey(clientkey);
+  secureClient.setCACert(cacert);
+  secureClient.setCertificate(clientcert);
+  secureClient.setPrivateKey(clientkey);
   
   mqtt.setServer(MQTT_HOST_USING_PUBSUB, 8883);
   mqtt.setCallback(mqttCallback);
   
   cloudTalkGsm.restartModem(&modem);
   cloudTalkGsm.initialiseModem(&modem);
-
+  
   sensorCheckTimer.attach(1, oneSecCallback);
 }
 
