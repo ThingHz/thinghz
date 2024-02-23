@@ -63,6 +63,8 @@ class RunTimeState {
       lux(INVALUD_LUX_READING),
       light_state_1(DEFAULT_STATE_READING),
       light_state_2(DEFAULT_STATE_READING),
+      light_state_3(DEFAULT_STATE_READING),
+      light_state_4(DEFAULT_STATE_READING),
       light_thresh(DEFAULT_THRESH_READING),
       isReadSensorTimeout(false),
       isPayloadPostTimeout(false),
@@ -90,6 +92,8 @@ class RunTimeState {
     float lux;
     uint8_t light_state_1;
     uint8_t light_state_2;
+    uint8_t light_state_3;
+    uint8_t light_state_4;
     uint light_thresh; 
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
@@ -117,7 +121,9 @@ class PersistantState {
       isOtaAvailable(0),
       newfWVersion(0),
       light_state_1(1),
-      light_state_2(1)
+      light_state_2(1),
+      light_state_3(1),
+      light_state_4(1)
     {
 
     }
@@ -134,7 +140,9 @@ class PersistantState {
               (isOtaAvailable == rhs.isOtaAvailable) &&
               (newfWVersion == rhs.newfWVersion) &&
               (light_state_1 == rhs.light_state_1) &&
-              (light_state_2 == rhs.light_state_2));
+              (light_state_2 == rhs.light_state_2)) &&
+              (light_state_3 == rhs.light_state_3) &&
+              (light_state_4 == rhs.light_state_4));
     }
     // public data members
     String apSSID;
@@ -147,6 +155,8 @@ class PersistantState {
     uint8_t newfWVersion;
     uint8_t light_state_1;
     uint8_t light_state_2;
+    uint8_t light_state_3;
+    uint8_t light_state_4;
 };
 
 /**
@@ -172,6 +182,8 @@ struct PersistantStateStorageFormat {
     uint8_t newfWVersion;
     uint8_t light_state_1;
     uint8_t light_state_2;
+    uint8_t light_state_3;
+    uint8_t light_state_4;
 } __attribute__ ((packed));
 
 PersistantState::PersistantState(const PersistantStateStorageFormat& persistantStore)
@@ -186,6 +198,8 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
   newfWVersion = persistantStore.newfWVersion;
   light_state_1 = persistantStore.light_state_1;
   light_state_2 = persistantStore.light_state_2;
+  light_state_3 = persistantStore.light_state_3;
+  light_state_4 = persistantStore.light_state_4;
 }
 
 PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState &persistantState)
@@ -201,6 +215,8 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   newfWVersion = persistantState.newfWVersion;
   light_state_1 = persistantState.light_state_1;
   light_state_2 = persistantState.light_state_2;
+  light_state_3 = persistantState.light_state_3;
+  light_state_4 = persistantState.light_state_4;
 }
 
 /**

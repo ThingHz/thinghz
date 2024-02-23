@@ -12,7 +12,8 @@
 #define TINY_GSM_MODEM_SIM7600
 #define TINY_GSM_RX_BUFFER 1024
 #include <TinyGsmClient.h>
-#include "oledState.h"
+//#include "oledState.h"
+#include "tftState.h"
 
 const char topic_publish[] = "aws/thing/thinghz/";
 const char topic_subscribe[] = "aws/thing/thinghz/light";

@@ -13,7 +13,8 @@
 #include <Ticker.h>
 #include <rom/rtc.h>
 #include <driver/adc.h>
-#include "oledState.h"
+//#include "oledState.h"
+#include "tftState.h"
 //#include "SparkFun_SCD4x_Arduino_Library.h"
 #include "PubSubClient.h"
 #include "certs.h"
@@ -50,7 +51,7 @@ void setup()
   Serial.begin(115200);
   SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
   Wire.begin();
-  DEBUG_PRINTLN("This is THingHz Range of wireless sensors");
+  DEBUG_PRINTLN("This is THingHz Smart Tissue Culture Rack");
   if (!EEPROM.begin(EEPROM_STORE_SIZE))
   {
     DEBUG_PRINTLN("Problem loading EEPROM");
@@ -94,20 +95,23 @@ void setup()
     captivePortal.beginServer();
     delay(100);
 
-#ifdef OLED_DISPLAY
+/*#ifdef OLED_DISPLAY
     clearDisplay();
     RSTATE.displayEvents = DisplayPortalConfig;
     drawDisplay(RSTATE.displayEvents);
-#endif
+#endif*/
   }
 
   pinMode(SIG_PIN, OUTPUT);
   pinMode(MODEM_PWKEY, OUTPUT);
-  pinMode(RELAY_PIN, OUTPUT);
   pinMode(RELAY_PIN_1, OUTPUT);
-  digitalWrite(RELAY_PIN,PSTATE.light_state_1);
-  digitalWrite(RELAY_PIN_1,PSTATE.light_state_2);
-  
+  pinMode(RELAY_PIN_2, OUTPUT);
+  pinMode(RELAY_PIN_3, OUTPUT);
+  pinMode(RELAY_PIN_4, OUTPUT);
+  digitalWrite(RELAY_PIN_1,PSTATE.light_state_1);
+  digitalWrite(RELAY_PIN_2,PSTATE.light_state_2);
+  digitalWrite(RELAY_PIN_3,PSTATE.light_state_3);
+  digitalWrite(RELAY_PIN_4,PSTATE.light_state_4);
   modemPowerKeyToggle();
   secureClient.setCACert(cacert);
   secureClient.setCertificate(clientcert);
@@ -278,10 +282,10 @@ void mqtt_check_connection(bool isGSMRequired)
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
   sensorCheckTimer.detach();
   DEBUG_PRINT("Action received");
-  clearDisplay();
+  //clearDisplay();
   cloudTalkGsm.handleSubscribe((char*)payload);
   String mqtt_ack_topic = cloudTalkGsm.createSubscribeTopic(true);
-  if (!RSTATE.light_state_1 && !RSTATE.light_state_2){
+  if (!RSTATE.light_state_1 || !RSTATE.light_state_2  || !RSTATE.light_state_3 || !RSTATE.light_state_4){
       mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"on\"}");
   }else{
       mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"off\"}");
