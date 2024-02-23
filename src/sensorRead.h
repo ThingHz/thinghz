@@ -1,16 +1,16 @@
 #ifndef SENSOR_READ_H
 #define SENSOR_READ_H
 
-#include "Adafruit_SHT31.h"
+//#include "Adafruit_SHT31.h"
+#include "Adafruit_SHT4x.h"
 #include "deviceState.h"
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include "utils.h"
-#include "SparkFun_SCD4x_Arduino_Library.h" 
 #include "BH1750.h"
 
 
-Adafruit_SHT31 sht31(&Wire);
+//Adafruit_SHT31 sht31(&Wire);
+Adafruit_SHT4x sht4 = Adafruit_SHT4x();
+
 BH1750 lightMeter(0x23);
 
 /**
@@ -19,18 +19,30 @@ BH1750 lightMeter(0x23);
    @return:
    true when initialisation success else set the deviceStateevent and return false
 */
-bool shtInit()
+/*bool shtInit()
 {
   if (!sht31.begin(0x44))
   { // Set to 0x45 for alternate i2c addr
     DEBUG_PRINTLN("Couldn't find SHT31");
-    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTDisconnected);
+    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTDisconnected);
+  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
+  return true;
+}*/
+bool shtInit()
+{
+  if (!sht4.begin(&Wire))
+  { // Set to 0x45 for alternate i2c addr
+    DEBUG_PRINTLN("Couldn't find SHT4x");
+    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
+    return false;
+  }
+  sht4.setPrecision(SHT4X_HIGH_PRECISION);
+  sht4.setHeater(SHT4X_NO_HEATER);
+  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
   return true;
 }
-
 
 /**
    @brief:
@@ -53,26 +65,6 @@ bool lightInit()
 
 /**
    @brief:
-   Initialise SCD40
-   @return:
-   true when initialisation success else set the deviceStateevent and return false
-*/
-bool scdInit(SCD4x *scd_sensor)
-{
-  if (!scd_sensor->begin())
-  {
-    DEBUG_PRINTLN("Couldn't find SCD");
-    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_GASFaulty);
-    return false;
-  }
-  scd_sensor->setSensorAltitude(ALTITUDE_FOR_SCD); 
-  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_GASFaulty);
-  return true;
-}
-
-
-/**
-   @brief:
    test the bit status 
    @return:
    true when initialisation success and test the deviceStateEvent
@@ -82,16 +74,6 @@ bool isSHTAvailable()
   return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
 }
 
-
-/**
-   @brief:
-   test the bit status 
-   @return:
-   true when initialisation success and test the deviceStateEvent
-*/
-bool isSCDAvailable(){
-    return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_GASFaulty);  
-}
 
 /**
    @brief:
@@ -117,7 +99,7 @@ bool isSHTWorking()
    @return:
    true when redings are success
 */
-bool readSHT()
+/*bool readSHT()
 {
   
   float temp = sht31.readTemperature();
@@ -136,28 +118,35 @@ bool readSHT()
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  RSTATE.temperature = temp + PSTATE.tempCalibration;
-  RSTATE.humidity = humid + PSTATE.humidCalibration;
+  RSTATE.temperature = temp; 
+  RSTATE.humidity = humid;
 
   return true;
-}
+}*/
+bool readSHT() {
+  sensors_event_t humidity, temp;
+  sht4.getEvent(&humidity, &temp);// populate temp and humidity objects with fresh data
 
+  float temp_sht = temp.temperature;
 
-/**
-   @brief:
-   read SCD value 
-   @return:
-   true when readings are success
-*/
-bool readSCD(SCD4x *scd_sensor){
-  if (scd_sensor->readMeasurement())
-  { 
-    uint16_t carbonValue = scd_sensor->getCO2();
-    RSTATE.carbon = carbonValue + PSTATE.carbonCalibration;
-    return true;
+  float humid_sht = humidity.relative_humidity;
+
+  if (isnan(temp_sht))
+  { // check if 'is not a number'
+    DEBUG_PRINTLN("Failed to read temperature");
+    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
+    return false;
   }
-  DEBUG_PRINTLN("Failed to get CO2 Values");
-  return false;
+  if (isnan(humid_sht))
+  { // check if 'is not a number'
+    DEBUG_PRINTLN("Failed to read humidity");
+    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
+    return false;
+  }
+  RSTATE.temperature = temp_sht; 
+  RSTATE.humidity = humid_sht;
+
+  return true;
 }
 
 /**

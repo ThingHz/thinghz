@@ -1,59 +1,49 @@
 #include <Wire.h>
+#include <ThinghzArduino.h>
+#include "hardwareDefs.h"
 #include "deviceState.h"
 #include "captivePortal.h"
-#include "hardwareDefs.h"
-#include "SSLClient.h"
-#include "cloudInteractGSM.h"
-#define TINY_GSM_MODEM_SIM7600
-#define TINY_GSM_RX_BUFFER 1024
-#include <TinyGsmClient.h>
+#include "cloudInteract.h"
 #include "sensorRead.h"
 #include "utils.h"
 #include "WiFiOTA.h"
 #include <Ticker.h>
 #include <rom/rtc.h>
 #include <driver/adc.h>
-#include "oledState.h"
-//#include "SparkFun_SCD4x_Arduino_Library.h"
-#include "PubSubClient.h"
-#include "certs.h"
-#include "uuid.h"
+#include "tftState.h"
 
-
+#define SerialAT Serial1
+  
 Ticker sensorCheckTimer;
 DeviceState state;
 DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
 
-
-#ifdef DUMP_AT_COMMANDS
-#include <StreamDebugger.h>
-StreamDebugger debugger(SerialAT, Serial);
-TinyGsm modem(debugger);
-TinyGsmClient gsmClient(modem);
-SSLClient secureClient(&gsmClient);
-PubSubClient mqtt(secureClient);
-#else
-TinyGsm modem(SerialAT);
-TinyGsmClient gsmClient(modem);
-SSLClient secureClient(&gsmClient);
-PubSubClient mqtt(secureClient);
+#ifdef THINGHZ_ARDUINO_USE_MODEM
+  TinyGsm modem(SerialAT);
 #endif
 
-
-
-CloudTalkGSM cloudTalkGsm;
+CloudTalk cloudTalk;
 
 void setup()
 {
   // put your setup code here, to run once:
-  Serial.begin(115200);
-  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+  Serial.begin(9600);
   Wire.begin();
-  DEBUG_PRINTLN("This is THingHz Range of wireless sensors");
+  DEBUG_PRINTLN("This is THingHz Smart Tissue Culture Rack");
   if (!EEPROM.begin(EEPROM_STORE_SIZE))
   {
     DEBUG_PRINTLN("Problem loading EEPROM");
+  }
+
+   if (!SPIFFS.begin(true))
+  {
+    Serial.println("spiffs mount failed");
+    return;
+  } 
+  else
+  {
+    Serial.println("spiffs mount success");
   }
 
   bool rc = deviceState.load();
@@ -94,54 +84,89 @@ void setup()
     captivePortal.beginServer();
     delay(100);
 
-#ifdef OLED_DISPLAY
+/*#ifdef OLED_DISPLAY
     clearDisplay();
     RSTATE.displayEvents = DisplayPortalConfig;
     drawDisplay(RSTATE.displayEvents);
-#endif
+#endif*/
   }
 
+  #ifdef THINGHZ_ARDUINO_USE_MODEM
+    pinMode(MODEM_PWKEY, OUTPUT);
+    pinMode(MODEM_FLIGHT, OUTPUT);
+  #endif
+
   pinMode(SIG_PIN, OUTPUT);
-  pinMode(MODEM_PWKEY, OUTPUT);
-  pinMode(RELAY_PIN, OUTPUT);
   pinMode(RELAY_PIN_1, OUTPUT);
-  digitalWrite(RELAY_PIN,PSTATE.light_state_1);
-  digitalWrite(RELAY_PIN_1,PSTATE.light_state_2);
+  pinMode(RELAY_PIN_2, OUTPUT);
+  pinMode(RELAY_PIN_3, OUTPUT);
+  pinMode(RELAY_PIN_4, OUTPUT);
+
+  digitalWrite(RELAY_PIN_1,PSTATE.light_state_1);
+  digitalWrite(RELAY_PIN_2,PSTATE.light_state_2);
+  digitalWrite(RELAY_PIN_3,PSTATE.light_state_2);
+  digitalWrite(RELAY_PIN_4,PSTATE.light_state_2);
   
-  modemPowerKeyToggle();
-  secureClient.setCACert(cacert);
-  secureClient.setCertificate(clientcert);
-  secureClient.setPrivateKey(clientkey);
-  
-  mqtt.setServer(MQTT_HOST_USING_PUBSUB, 8883);
-  mqtt.setCallback(mqttCallback);
-  
-  cloudTalkGsm.restartModem(&modem);
-  cloudTalkGsm.initialiseModem(&modem);
+  #ifdef THINGHZ_ARDUINO_USE_MODEM
+    modemPowerKeyToggle();
+    SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+    initialiseModem(&modem); //orwe can call init
+    checkNetwork(&modem);
+    if(checkNetwork(&modem)){
+        connectGPRS(&modem);
+    }
+  #endif
   
   sensorCheckTimer.attach(1, oneSecCallback);
+  Thinghz.sub_topic = MQTT_TOPIC_SUBSCRIBE;
 }
 
 void loop()
 {
   if (!RSTATE.isPortalActive)
   {
-    if (!isDesiredWiFiAvailable(PSTATE.apSSID) && !RSTATE.isSwitchToGSMRequired)
-    {
-      DEBUG_PRINTLN("WiFi not available Switch to GSM");
-      RSTATE.isSwitchToGSMRequired = true;
-    }
+    #ifdef THINGHZ_ARDUINO_USE_MODEM
+      if(!checkNetwork(&modem) && !connectGPRS(&modem)){
+          DEBUG_PRINTLN("Error connecting to network");
+      }else{
+          RSTATE.isNetworkConnected = true;     
+      }
+    #else
+      if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
+        {
+          DEBUG_PRINTLN("Error connecting to WiFi, Trying again");
+        }else{
+            RSTATE.isNetworkConnected = true;
+        }
+    #endif
+     if (RSTATE.isNetworkConnected && !RSTATE.isThinghzBegin) {
 
-    if (!RSTATE.isSwitchToGSMRequired && !reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
-    {
-      DEBUG_PRINTLN("Error Connecting to WiFi, or switched to GSM");
-    }
-  }
+      #ifdef THINGHZ_ARDUINO_USE_MODEM  
+        if (!Thinghz.begin(&modem))
+        {
+          DEBUG_PRINTLN("Thinghz Client Initialization Failed.");
+        }
+        else
+        {
+          Thinghz.setActionCallback(ThinghzActionsCallback);
+          DEBUG_PRINTLN("Thinghz Client is Initialized Successfully.");
+          RSTATE.isThinghzBegin = true;
+        }
+      #else
+        if (!Thinghz.begin())
+        {
+          DEBUG_PRINTLN("Thinghz Client Initialization Failed.");
+        }
+        else
+        {
+          Thinghz.setActionCallback(ThinghzActionsCallback);
+          DEBUG_PRINTLN("Thinghz Client is Initialized Successfully.");
+          RSTATE.isThinghzBegin = true;
+        }
+      #endif
+    } 
 
-  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
-  {
-    captivePortal.endPortal();
-    RSTATE.isPortalActive = false;
+  Thinghz.loop();
   }
 
   if (RSTATE.isReadSensorTimeout)
@@ -156,7 +181,7 @@ void loop()
       readSHT();
       DEBUG_PRINTF("Temperature Value: %1f, Humidity Value: %1f\n", RSTATE.temperature, RSTATE.humidity);
     }
-    if (!isLightAvailable)
+    if (!isLightAvailable())
     {
       DEBUG_PRINTLN("BH1750 Not connected, initialising again");
       lightInit();
@@ -175,32 +200,26 @@ void loop()
     RSTATE.isReadSensorTimeout = false;
   }
 
-  if (RSTATE.isMqttConnectionTimeout)
+  if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
   {
-    RSTATE.isNetworkActive = true;
-    RSTATE.isMqttConnectionTimeout = true;
-    mqtt_check_connection(RSTATE.isSwitchToGSMRequired);
-    RSTATE.isMqttConnectionTimeout = false;
+    captivePortal.endPortal();
+    RSTATE.isPortalActive = false;
   }
 
   if (RSTATE.isPayloadPostTimeout)
   {
-    if (RSTATE.isSwitchToGSMRequired)
-    {
-      DEBUG_PRINTLN("Post to cloud  ");
+     DEBUG_PRINTLN("Post to cloud  ");
       sensorCheckTimer.detach();
-      String payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
-      mqtt.publish(topic_publish,payload.c_str());
-      cloudTalkGsm.updateNTPTime(&modem);
+      String payload = cloudTalk.createPayload(DEVICE_SENSOR_TYPE);
+      if(!Thinghz.publishToIoT(payload.c_str(),MQTT_TOPIC_PUBLISH)){
+          DEBUG_PRINTLN("Publish Failed");
+      }
       blinkSignalLed(HIGH);
-    }
-    RSTATE.isPayloadPostTimeout = false;
-    DEBUG_PRINTLN(RSTATE.deviceEvents);
-    deviceState.store();
-    sensorCheckTimer.attach(1, oneSecCallback);
+      RSTATE.isPayloadPostTimeout = false;
+      DEBUG_PRINTLN(RSTATE.deviceEvents);
+      deviceState.store();
+      sensorCheckTimer.attach(1, oneSecCallback);
   }
-  mqtt_subscribe_task();
-  mqtt.loop();
 }
 
 void oneSecCallback()
@@ -224,70 +243,43 @@ void oneSecCallback()
   }
 }
 
-void mqtt_subscribe_task()
-{  
-  static int gsm_retries = 0;
-  if(!modem.isNetworkConnected()){
-      RSTATE.isNetworkActive = false;
-      DEBUG_PRINTLN("Network not available");
-      modem.waitForNetwork();
-      gsm_retries++;
-      if(gsm_retries >= RSTATE.gsmConnectionRetries){
-          cloudTalkGsm.restartModem(&modem);
-      }
-
-  }
-  if(!modem.isGprsConnected()){
-      DEBUG_PRINTLN("GPRS not connected");
-      modem.gprsConnect("airtelgprs.com");
-  }
-
-  if(modem.isGprsConnected()){
-  if (!mqtt.connected())
-  {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    DEBUG_PRINTLN(StringUUIDGen());
-    if (mqtt.connect(StringUUIDGen().c_str()))
-    {
-      RSTATE.isMQTTConnected = true;
-      Serial.println("connected");
-      String mqtt_sub_topic = cloudTalkGsm.createSubscribeTopic(false);
-      DEBUG_PRINTF("subscribing to topic: %s\n",mqtt_sub_topic.c_str()); 
-      mqtt.subscribe(mqtt_sub_topic.c_str());
-    }
-    else
-    {
-      RSTATE.isMQTTConnected = false;
-      DEBUG_PRINTF("failed, rc=%d\n",mqtt.state());
-    }
-  }
-  }
-}
-
-void mqtt_check_connection(bool isGSMRequired)
-{ 
-  //getGSMDateAndTime(&modem);
-  if (!mqtt.connected())
-  {
-    mqtt_subscribe_task();
-  }
-  blinkSignalLed(LOW);
-}
-
-void mqttCallback(char* topic, byte* payload, unsigned int len) {
+void ThinghzActionsCallback(char* topic, byte* payload, unsigned int length) {
   sensorCheckTimer.detach();
   DEBUG_PRINT("Action received");
-  clearDisplay();
-  cloudTalkGsm.handleSubscribe((char*)payload);
-  String mqtt_ack_topic = cloudTalkGsm.createSubscribeTopic(true);
-  if (!RSTATE.light_state_1 && !RSTATE.light_state_2){
-      mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"on\"}");
+  //clearDisplay();
+  RSTATE.displayEvents = DisplayEventActionReceived;
+  drawDisplay(RSTATE.displayEvents);
+  int strSize = 0;
+  int tempVar = 0;
+
+  strSize = length + 1;
+
+  if(strSize <= 1) {
+    DEBUG_PRINTLN("failed to get action json size");
+    return;
+  }
+
+  char* actionJsonStr = (char*) malloc(strSize);
+  if (actionJsonStr == NULL) {
+      DEBUG_PRINTLN("Failed To allcate memory for action json");
+    return;
+  }
+
+  tempVar = snprintf(actionJsonStr, strSize, "%s", (char*)payload);
+
+  cloudTalk.handleSubscribe((char*)actionJsonStr);
+  String mqtt_ack_topic = cloudTalk.createSubscribeTopic(true);
+  if (!RSTATE.light_state_1 || !RSTATE.light_state_2 || !RSTATE.light_state_3 || !RSTATE.light_state_4){
+      Thinghz.publishToIoT("{\"Success\": \"true\", \"Status\": \"on\"}", mqtt_ack_topic.c_str());
   }else{
-      mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"off\"}");
+      Thinghz.publishToIoT("{\"Success\": \"true\", \"Status\": \"false\"}", mqtt_ack_topic.c_str());
   } 
   sensorCheckTimer.attach(1, oneSecCallback);
   blinkSignalLed(HIGH);
+  free(actionJsonStr);
 }
+
+
+
 
 

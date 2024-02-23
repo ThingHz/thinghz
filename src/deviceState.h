@@ -10,16 +10,17 @@
 */
 enum DeviceStateEvent {
   DSE_None                    = 0,
-  DSE_SHTDisconnected         = 1,
-  DSE_SHTFaulty               = 1 << 1,
-  DSE_GASFaulty               = 1 << 7,
-  DSE_LIGHTFaulty             = 1 << 9,
-  DSE_DisplayDisconnected     = 1 << 10,
-  DSE_SimStatusZero           = 1 << 11,
-  DSE_ConnectMqttFailed       = 1 << 12,
-  DSE_MessagePublishFailed    = 1 << 13,
-  DSE_StartMqttFailed         = 1 << 14,
-  DSE_SubscribeFailed         = 1 << 15,
+  DSE_SHTFaulty               = 1,
+  DSE_GASFaulty               = 1 << 2,
+  DSE_LIGHTFaulty             = 1 << 3,
+  DSE_DisplayDisconnected     = 1 << 4,
+  DSE_SimStatusZero           = 1 << 5,
+  DSE_NoNetwork               = 1 << 6,
+  DSE_ConnectMqttFailed       = 1 << 7,
+  DSE_MessagePublishFailed    = 1 << 8,
+  DSE_StartMqttFailed         = 1 << 9,
+  DSE_SHTDisconnected         = 1 << 10,
+  DSE_SubscribeFailed         = 1 << 11
 };
 
 enum DisplayMode {
@@ -51,10 +52,11 @@ class RunTimeState {
     RunTimeState():
       deviceEvents(DeviceStateEvent::DSE_None),
       displayEvents(DisplayMode::DisplayNone),
-      isWiFiConnected(false),
+      isNetworkConnected(false),
       isAPActive(false),
       isPortalActive(false),
       startPortal(0),
+      isThinghzBegin(false),
       macAddr(DEVICE_ID_DEFAULT),
       batteryPercentage(100),
       temperature(INVALID_TEMP_READING),
@@ -63,6 +65,8 @@ class RunTimeState {
       lux(INVALUD_LUX_READING),
       light_state_1(DEFAULT_STATE_READING),
       light_state_2(DEFAULT_STATE_READING),
+      light_state_3(DEFAULT_STATE_READING),
+      light_state_4(DEFAULT_STATE_READING),
       light_thresh(DEFAULT_THRESH_READING),
       isReadSensorTimeout(false),
       isPayloadPostTimeout(false),
@@ -78,10 +82,11 @@ class RunTimeState {
 
     uint deviceEvents;
     DisplayMode displayEvents;
-    bool isWiFiConnected;
+    bool isNetworkConnected;
     bool isAPActive;
     bool isPortalActive;
     unsigned long startPortal;
+    bool isThinghzBegin;
     String macAddr;
     int batteryPercentage;
     float temperature;
@@ -90,6 +95,8 @@ class RunTimeState {
     float lux;
     uint8_t light_state_1;
     uint8_t light_state_2;
+    uint8_t light_state_3;
+    uint8_t light_state_4;
     uint light_thresh; 
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
@@ -111,13 +118,10 @@ class PersistantState {
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
       apPass(WAN_WIFI_PASS_DEFAULT),
       deviceId(DEVICE_ID_DEFAULT),
-      tempCalibration(CALIBRATION_LEVEL_TEMP),
-      humidCalibration(CALIBRATION_LEVEL_HUMID),
-      carbonCalibration(CALIBRATION_LEVEL_CARBON),
-      isOtaAvailable(0),
-      newfWVersion(0),
       light_state_1(1),
-      light_state_2(1)
+      light_state_2(1),
+      light_state_3(1),
+      light_state_4(1)
     {
 
     }
@@ -128,25 +132,19 @@ class PersistantState {
       return ((apSSID == rhs.apSSID) &&
               (apPass == rhs.apPass) &&
               (deviceId == rhs.deviceId) &&
-              (tempCalibration == rhs.tempCalibration) &&
-              (humidCalibration == rhs.humidCalibration) &&
-              (carbonCalibration == rhs.carbonCalibration) &&
-              (isOtaAvailable == rhs.isOtaAvailable) &&
-              (newfWVersion == rhs.newfWVersion) &&
               (light_state_1 == rhs.light_state_1) &&
-              (light_state_2 == rhs.light_state_2));
+              (light_state_2 == rhs.light_state_2) &&
+              (light_state_3 == rhs.light_state_3) &&
+              (light_state_4 == rhs.light_state_4));
     }
     // public data members
     String apSSID;
     String apPass;
     String deviceId;
-    int tempCalibration;
-    int humidCalibration;
-    int carbonCalibration;
-    uint8_t isOtaAvailable;
-    uint8_t newfWVersion;
     uint8_t light_state_1;
     uint8_t light_state_2;
+    uint8_t light_state_3;
+    uint8_t light_state_4;
 };
 
 /**
@@ -165,13 +163,10 @@ struct PersistantStateStorageFormat {
     char apSSID[30];
     char deviceId[30];
     char apPass[30];
-    int tempCalibration;
-    int humidCalibration;
-    int carbonCalibration;
-    uint8_t isOtaAvailable;
-    uint8_t newfWVersion;
     uint8_t light_state_1;
     uint8_t light_state_2;
+    uint8_t light_state_3;
+    uint8_t light_state_4;
 } __attribute__ ((packed));
 
 PersistantState::PersistantState(const PersistantStateStorageFormat& persistantStore)
@@ -179,13 +174,10 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
   deviceId = String(persistantStore.deviceId);
-  tempCalibration = persistantStore.tempCalibration ;
-  humidCalibration = persistantStore.humidCalibration;
-  carbonCalibration = persistantStore.carbonCalibration;
-  isOtaAvailable = persistantStore.isOtaAvailable;
-  newfWVersion = persistantStore.newfWVersion;
   light_state_1 = persistantStore.light_state_1;
   light_state_2 = persistantStore.light_state_2;
+  light_state_3 = persistantStore.light_state_3;
+  light_state_4 = persistantStore.light_state_4;
 }
 
 PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState &persistantState)
@@ -194,13 +186,10 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
   strcpy(deviceId, persistantState.deviceId.c_str());
-  tempCalibration = persistantState.tempCalibration;
-  humidCalibration = persistantState.humidCalibration;
-  carbonCalibration = persistantState.carbonCalibration;
-  isOtaAvailable = persistantState.isOtaAvailable;
-  newfWVersion = persistantState.newfWVersion;
   light_state_1 = persistantState.light_state_1;
   light_state_2 = persistantState.light_state_2;
+  light_state_3 = persistantState.light_state_3;
+  light_state_4 = persistantState.light_state_4;
 }
 
 /**

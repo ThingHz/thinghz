@@ -1,8 +1,10 @@
 #ifndef HARDWAREDEFS_H
 #define HARDWAREDEFS_H
 
-
-
+/*Modem Defines*/
+#ifdef THINGHZ_ARDUINO_USE_MODEM
+  #inclde "modem_func.h"
+#endif
 
 /**
  * @brief 
@@ -92,8 +94,10 @@ String formApSsidName(String deviceId) {
  * @brief 
  * Wiring configuration pin 
 */
-#define RELAY_PIN             15                   //Relay pin
-#define RELAY_PIN_1           5
+#define RELAY_PIN_1           5                   //Relay pin
+#define RELAY_PIN_2           15
+#define RELAY_PIN_3           14
+#define RELAY_PIN_4           13
 #define SIG_PIN               2                   //Status Signal pin
 
 //Comment out to disable display
@@ -157,8 +161,9 @@ String formApSsidName(String deviceId) {
  * MQTT Constants
  */
 #define MQTT_HOST                               "tcp://a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com:8883"      
-#define MQTT_HOST_USING_PUBSUB                  "a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com"
-#define MQTT_TOPIC                              "aws/thing/thinghz/"
+const char* MQTT_HOST_USING_PUBSUB = "a26dm966t9g0lv-ats.iot.us-east-1.amazonaws.com";
+const char* MQTT_TOPIC_PUBLISH = "aws/thing/thinghz/";
+const char* MQTT_TOPIC_SUBSCRIBE = "aws/thing/thinghz/light";
 #define NTP_SERVER                              "pool.ntp.org"
 #define MQTT_CLIENT_NAME                        "thinghz_cleint01"
 
@@ -175,8 +180,8 @@ String formApSsidName(String deviceId) {
  * @brief 
  * WiFi Configuration default preprocessors
  */
-#define WAN_WIFI_SSID_DEFAULT                    "thinghz"     
-#define WAN_WIFI_PASS_DEFAULT                    "thinghz123"  
+#define WAN_WIFI_SSID_DEFAULT                    "Sarthak"     
+#define WAN_WIFI_PASS_DEFAULT                    "wireless18"  
 
 //ThingHz default Device Id
 #define DEVICE_ID_DEFAULT                        "THING00001"

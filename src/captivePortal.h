@@ -39,7 +39,7 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 		)rawliteral";
 
 
-const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
+/*const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
     <style>body{ background-color: #0067B3 ; font-family: Arial, Helvetica, Sans-Serif; Color: #FFFFFF; }input[type=text], select {width: 100%;padding: 12px 20px;margin: 8px 0;display: inline-block;border: 1px solid #ccc;border-radius: 4px;box-sizing: border-box;}</style>
     </head>
     <title>ThingHz</title><body>
@@ -56,7 +56,7 @@ const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE 
     </div>
     </body>
     </html>
-      )rawliteral";
+      )rawliteral";*/
 
 class ESPCaptivePortal
 {
@@ -118,7 +118,7 @@ class ESPCaptivePortal
         }
       });
 
-      server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
+      /*server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
         if (request->params() > 0) {
           if (request->hasParam("tempcal")) {
             PSTATE.tempCalibration = (request->getParam("tempcal")->value()).toInt();
@@ -139,7 +139,7 @@ class ESPCaptivePortal
         } else {
           request->send_P(200, "text/html", HTTP_FORM_SET_CALLIBRATION_FACTOR);
         }
-      });
+      });*/
 
 
       server.on("/check", HTTP_GET, [](AsyncWebServerRequest * request) {

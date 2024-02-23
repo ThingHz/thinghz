@@ -91,7 +91,7 @@ bool APConnection(const String& APssid) {
   WiFi.disconnect();
   uint8_t mac[6];
   String macStr = getLast3ByteMac(mac,false);
-  if (WiFi.softAPgetStationNum() > 0 && PSTATE.isOtaAvailable == 0) {
+  if (WiFi.softAPgetStationNum() > 0) {
     DEBUG_PRINTLN("Station Connected to SoftAP, keeping soft AP alive");
     RSTATE.isAPActive = true;
     return true;
