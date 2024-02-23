@@ -7,6 +7,7 @@
 #include "hardwareDefs.h"
 #include "deviceState.h"
 #include "WiFiOTA.h"
+#include "sensorRead.h"
 
 #define SCREEN_WIDTH  320
 #define SCREEN_HEIGHT 240
@@ -1927,12 +1928,16 @@ void draw_header() {
         tft.drawLine(161,9,163,4,TFT_WHITE);
     }
 
-   if(!RSTATE.isThinghzBegin){
+   if(!RSTATE.isMQTTConnected){
       tft.setTextDatum(0);
       tft.setFreeFont(FSS9);
       tft.drawString("MQTT",200,10,GFXFF);
       tft.drawLine(190,22,195,18,TFT_WHITE);
       tft.drawLine(195,22,190,18,TFT_WHITE); 
+   }else{
+      tft.setTextDatum(0);
+      tft.setFreeFont(FSS9);
+      tft.drawString("MQTT",200,10,GFXFF);
    }
   
   tft.drawSmoothRoundRect(270, 8 ,0, 2, 25, 15, TFT_WHITE);

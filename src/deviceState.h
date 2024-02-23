@@ -140,7 +140,7 @@ class PersistantState {
               (isOtaAvailable == rhs.isOtaAvailable) &&
               (newfWVersion == rhs.newfWVersion) &&
               (light_state_1 == rhs.light_state_1) &&
-              (light_state_2 == rhs.light_state_2)) &&
+              (light_state_2 == rhs.light_state_2) &&
               (light_state_3 == rhs.light_state_3) &&
               (light_state_4 == rhs.light_state_4));
     }

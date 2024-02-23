@@ -403,6 +403,8 @@ public:
     DEBUG_PRINTLN("Obtaining action variables");
     int lightState1=0;
     int lightState2=0;
+    int lightState3=0;
+    int lightState4=0;
     if (subscribeJson.containsKey("light_state_1")) {
          lightState1 = subscribeJson["light_state_1"];
          
@@ -410,7 +412,14 @@ public:
     if (subscribeJson.containsKey("light_state_2")) {
          lightState2 = subscribeJson["light_state_2"];
       }
-    toggleLightState((uint8_t)lightState1, (uint8_t)lightState2);   
+      if (subscribeJson.containsKey("light_state_3")) {
+         lightState1 = subscribeJson["light_state_3"];
+         
+      }
+    if (subscribeJson.containsKey("light_state_4")) {
+         lightState2 = subscribeJson["light_state_4"];
+      }
+    toggleLightState((uint8_t)lightState1, (uint8_t)lightState2, (uint8_t)lightState3, (uint8_t)lightState4);   
     if (subscribeJson.containsKey("light_thresh"))
         RSTATE.light_thresh = subscribeJson["light_thresh"];
     DEBUG_PRINTF("light intesity is %d",RSTATE.light_thresh);

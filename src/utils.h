@@ -194,7 +194,7 @@ void modemPowerKeyToggle() {
    @brief:
    toggle light state
 */
-void toggleLightState(uint8_t lightState_1, uint8_t lightState_2){
+void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightState_3, uint8_t lightState_4){
   RSTATE.light_state_1 = !lightState_1;
   RSTATE.light_state_2 = !lightState_2;
   RSTATE.light_state_3 = !lightState_3;
