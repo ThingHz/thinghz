@@ -188,8 +188,8 @@ void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightS
   RSTATE.light_state_4 = !lightState_4;
   PSTATE.light_state_1 = !lightState_1;
   PSTATE.light_state_2 = !lightState_2;
-  PSTATE.light_state_3 = !lightState_1;
-  PSTATE.light_state_4 = !lightState_2;
+  PSTATE.light_state_3 = !lightState_3;
+  PSTATE.light_state_4 = !lightState_4;
   //RSTATE.light_state = !RSTATE.light_state;
   DEBUG_PRINTF("toggle light1 state to: %d and light2 state to: %d\n", !lightState_1,!lightState_2);
   digitalWrite(RELAY_PIN_1,RSTATE.light_state_1);

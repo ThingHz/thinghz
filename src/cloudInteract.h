@@ -120,11 +120,11 @@ public:
     if (subscribeJson.containsKey("light_state_2")) {
          lightState2 = subscribeJson["light_state_2"];
       }
-    if (subscribeJson.containsKey("light_state_2")) {
-         lightState3 = subscribeJson["light_state_2"];
+    if (subscribeJson.containsKey("light_state_3")) {
+         lightState3 = subscribeJson["light_state_3"];
       }
-    if (subscribeJson.containsKey("light_state_2")) {
-         lightState4 = subscribeJson["light_state_2"];
+    if (subscribeJson.containsKey("light_state_4")) {
+         lightState4 = subscribeJson["light_state_4"];
       }
     toggleLightState((uint8_t)lightState1, (uint8_t)lightState2, (uint8_t)lightState3, (uint8_t)lightState4);   
     
