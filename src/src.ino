@@ -36,16 +36,6 @@ void setup()
     DEBUG_PRINTLN("Problem loading EEPROM");
   }
 
-   if (!SPIFFS.begin(true))
-  {
-    Serial.println("spiffs mount failed");
-    return;
-  } 
-  else
-  {
-    Serial.println("spiffs mount success");
-  }
-
   bool rc = deviceState.load();
   if (!rc)
   {
