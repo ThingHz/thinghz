@@ -36,8 +36,7 @@ bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
   DEBUG_PRINTF("pass: %s", pass.c_str());
   WiFi.begin(ssid.c_str(), pass.c_str());
   DEBUG_PRINTLN("staring wait for connection\n");
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  while (WiFi.status() != WL_CONNECTED) {
     DEBUG_PRINT(".");
     delay(maxDelay);
     if (loopCounter == 30) {
@@ -66,13 +65,13 @@ bool reconnectWiFi(const String& ssid, const String& pass, int maxDelay) {
    String with fullsize mac or last 3 bytes mac 
 */
 
-String getLast3ByteMac(uint8_t* mac, bool fullSizeMac){
+String getLast3ByteMac(uint8_t* mac, bool fullSizeMac) {
   char macStr[9] = { 0 };
   WiFi.macAddress(mac);
-  if(!fullSizeMac){
+  if (!fullSizeMac) {
     sprintf(macStr, "%02X%02X%02X", mac[3], mac[4], mac[5]);
-  }else{
-    sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2],mac[3], mac[4], mac[5]);
+  } else {
+    sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   }
   return String(macStr);
 }
@@ -90,14 +89,14 @@ String getLast3ByteMac(uint8_t* mac, bool fullSizeMac){
 bool APConnection(const String& APssid) {
   WiFi.disconnect();
   uint8_t mac[6];
-  String macStr = getLast3ByteMac(mac,false);
+  String macStr = getLast3ByteMac(mac, false);
   if (WiFi.softAPgetStationNum() > 0) {
     DEBUG_PRINTLN("Station Connected to SoftAP, keeping soft AP alive");
     RSTATE.isAPActive = true;
     return true;
   }
   WiFi.mode(WIFI_AP);
-  if (!WiFi.softAP((APssid+macStr).c_str())) {
+  if (!WiFi.softAP((APssid + macStr).c_str())) {
     return false;
   }
   delay(100);
@@ -166,8 +165,7 @@ bool writeOTA(const String& filename) {
    returns fully resolved filepath with name "/fileName"
 */
 
-String fullyResolvedFilePath(const String& path, const String& filename)
-{
+String fullyResolvedFilePath(const String& path, const String& filename) {
   String retValue = path;
   retValue += filename;
   return retValue;
@@ -180,8 +178,7 @@ String fullyResolvedFilePath(const String& path, const String& filename)
    String to be used as a device Id
 */
 
-String macAddrWithoutColons()
-{
+String macAddrWithoutColons() {
   uint8_t mac[6];
   WiFi.macAddress(mac);
   char macStr[13] = { 0 };
@@ -195,17 +192,17 @@ String macAddrWithoutColons()
    @return:
    true if exists
 */
-bool isDesiredWiFiAvailable(const String& ssid){
+bool isDesiredWiFiAvailable(const String& ssid) {
   int n = WiFi.scanNetworks();
-  if (n==0){
-      return false;
+  if (n == 0) {
+    return false;
   }
-  for(int i=0; i < n; i++){
-      String availableSSID = WiFi.SSID(i);
-      int res = strcmp(availableSSID.c_str(),ssid.c_str());
-      if(res == 0){
-        return true;
-      }
+  for (int i = 0; i < n; i++) {
+    String availableSSID = WiFi.SSID(i);
+    int res = strcmp(availableSSID.c_str(), ssid.c_str());
+    if (res == 0) {
+      return true;
+    }
   }
   WiFi.scanDelete();
   return false;

@@ -7,7 +7,7 @@
 #include "hardwareDefs.h"
 #include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h"
-#define  RESPONSE_LENGTH 200
+#define RESPONSE_LENGTH 200
 #include <AsyncElegantOTA.h>
 
 AsyncWebServer server(80);
@@ -39,7 +39,7 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 		)rawliteral";
 
 
-/*const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
+const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE html><html><head><meta charset="utf-8" />
     <style>body{ background-color: #0067B3 ; font-family: Arial, Helvetica, Sans-Serif; Color: #FFFFFF; }input[type=text], select {width: 100%;padding: 12px 20px;margin: 8px 0;display: inline-block;border: 1px solid #ccc;border-radius: 4px;box-sizing: border-box;}</style>
     </head>
     <title>ThingHz</title><body>
@@ -56,69 +56,68 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
     </div>
     </body>
     </html>
-      )rawliteral";*/
+      )rawliteral";
 
-class ESPCaptivePortal
-{
-  public:
-    // Warning:: requies device state to  be global and longer living
-    // than this
-    ESPCaptivePortal(DeviceState& devState) {
-    }
+class ESPCaptivePortal {
+public:
+  // Warning:: requies device state to  be global and longer living
+  // than this
+  ESPCaptivePortal(DeviceState& devState) {
+  }
 
-    /**
+  /**
        @brief:
        begins the Async WebServer
     */
-    void beginServer() {
-      AsyncElegantOTA.begin(&server);    // Start ElegantOTA
-      DEBUG_PRINTLN("Starting the captive portal. You can configure ESp32 values using portal");
-      server.begin();
-    }
+  void beginServer() {
+    AsyncElegantOTA.begin(&server);  // Start ElegantOTA
+    DEBUG_PRINTLN("Starting the captive portal. You can configure ESp32 values using portal");
+    server.begin();
+  }
 
-    /**
+  /**
        @brief:
        Kills the Async WebServer
     */
-    void endPortal() {
-      DEBUG_PRINTLN("Ending the captive portal");
-      deviceState.store();
-      server.reset();
-    }
+  void endPortal() {
+    DEBUG_PRINTLN("Ending the captive portal");
+    deviceState.store();
+    server.reset();
+  }
 
-    /**
+  /**
        @brief:
        Serves the portal
        @param:
        AP active flag
     */
-    void servePortal ( bool isAPActive ) {
+  void servePortal(bool isAPActive) {
 
-      server.on("/cred", HTTP_GET, [](AsyncWebServerRequest * request) {
-        if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass")) {
-          if (request->hasParam("device")) {
-            PSTATE.deviceId = request->getParam("device")->value();
-            DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
-          }
-        
-          PSTATE.apSSID = request->getParam("ssid")->value();
-          DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
-          PSTATE.apPass = request->getParam("pass")->value();
-          DEBUG_PRINTF("Pass Stored %s\t\n", PSTATE.apPass.c_str());
-          
-          if (request->hasParam("device")) {
-            snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"deviceId\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), (PSTATE.deviceId).c_str());
-            request->send(200, "application/json", credResponsePayload);
-          } else {
-            snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str());
-            request->send(200, "application/json", credResponsePayload);
-          }
-        } else {
-          request->send_P(200, "text/html", HTTP_FORM_WIFISET);
+    server.on("/cred", HTTP_GET, [](AsyncWebServerRequest* request) {
+      if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass")) {
+        if (request->hasParam("device")) {
+          PSTATE.deviceId = request->getParam("device")->value();
+          DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
         }
-      });
 
-      /*server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
+        PSTATE.apSSID = request->getParam("ssid")->value();
+        DEBUG_PRINTF("ssid stored %s\t\n", PSTATE.apSSID.c_str());
+        PSTATE.apPass = request->getParam("pass")->value();
+        DEBUG_PRINTF("Pass Stored %s\t\n", PSTATE.apPass.c_str());
+
+        if (request->hasParam("device")) {
+          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"deviceId\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), (PSTATE.deviceId).c_str());
+          request->send(200, "application/json", credResponsePayload);
+        } else {
+          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str());
+          request->send(200, "application/json", credResponsePayload);
+        }
+      } else {
+        request->send_P(200, "text/html", HTTP_FORM_WIFISET);
+      }
+    });
+
+    /*server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
         if (request->params() > 0) {
           if (request->hasParam("tempcal")) {
             PSTATE.tempCalibration = (request->getParam("tempcal")->value()).toInt();
@@ -142,29 +141,27 @@ class ESPCaptivePortal
       });*/
 
 
-      server.on("/check", HTTP_GET, [](AsyncWebServerRequest * request) {
-        String isSuccess = "true";
-        snprintf(checkResponsePayload, RESPONSE_LENGTH, "{\"Success\":\"%s\",\"DeviceId\":\"%s\"}",
-                 isSuccess.c_str(),(PSTATE.deviceId).c_str());
-        request->send(200, "application/json", checkResponsePayload);
-      });
+    server.on("/check", HTTP_GET, [](AsyncWebServerRequest* request) {
+      String isSuccess = "true";
+      snprintf(checkResponsePayload, RESPONSE_LENGTH, "{\"Success\":\"%s\",\"DeviceId\":\"%s\"}",
+               isSuccess.c_str(), (PSTATE.deviceId).c_str());
+      request->send(200, "application/json", checkResponsePayload);
+    });
 
-      server.onNotFound(_handleNotFound);
-      yield();
-    }
+    server.onNotFound(_handleNotFound);
+    yield();
+  }
 
-    /**
+  /**
        @brief:
        Helper funtion for unexpected error
        @param:
        AsyncWebServerRequest
     */
-    static void _handleNotFound(AsyncWebServerRequest *request)
-    {
-      String message = "File Not Found\n\n";
-      request->send(404, "text/plain", message);
-    }
-
+  static void _handleNotFound(AsyncWebServerRequest* request) {
+    String message = "File Not Found\n\n";
+    request->send(404, "text/plain", message);
+  }
 };
 
 

@@ -16,8 +16,8 @@
    battery percentage in int
 */
 int getBatteryPercentage(const float battVoltage) {
-  int maxVal = BATT_VOL_100 * 100; // scale by 100
-  int minVal = BATT_VOL_0 * 100; // scale by 100
+  int maxVal = BATT_VOL_100 * 100;  // scale by 100
+  int minVal = BATT_VOL_0 * 100;    // scale by 100
   int percentage = 0;
   if (battVoltage > maxVal) {
     maxVal = battVoltage;
@@ -25,7 +25,8 @@ int getBatteryPercentage(const float battVoltage) {
   percentage = map(int(battVoltage * 100), minVal, maxVal, 0, 100);
   if (percentage < 0) {
     percentage = 0;
-  }  if (percentage > 100) {
+  }
+  if (percentage > 100) {
     percentage = 100;
   }
   return percentage;
@@ -68,8 +69,7 @@ bool isMultiDeviceEvent(int n) {
   if (n == 0) {
     return false;
   }
-  while (n != 1)
-  {
+  while (n != 1) {
     n = n / 2;
     if (n % 2 != 0 && n != 1) {
       return false;
@@ -101,8 +101,7 @@ bool checkSetBit(int state, int setBit) {
    true if bit is set
 */
 
-bool testBit(uint &bits, int bit)
-{
+bool testBit(uint &bits, int bit) {
   return (bits & bit);
 }
 
@@ -112,8 +111,7 @@ bool testBit(uint &bits, int bit)
    @param:
    deviceEvent      bit position
 */
-void setBit(uint &bits, int bit)
-{
+void setBit(uint &bits, int bit) {
   bits |= bit;
 }
 
@@ -124,8 +122,7 @@ void setBit(uint &bits, int bit)
    deviceEvent      bit position
 */
 
-void clearBit(uint &bits, int bit)
-{
+void clearBit(uint &bits, int bit) {
   bits &= (~bit);
 }
 
@@ -137,8 +134,7 @@ void clearBit(uint &bits, int bit)
    String
 */
 
-String prepareRemoteFWFileName(uint8_t devType, uint8_t hwRev, uint8_t newFwRev)
-{
+String prepareRemoteFWFileName(uint8_t devType, uint8_t hwRev, uint8_t newFwRev) {
   char retString[20] = { 0 };
   snprintf(retString, sizeof(retString), "%d-%d-%d.bin", devType, hwRev, newFwRev);
   return String(retString);
@@ -169,9 +165,8 @@ bool isFileExistInSpiff(String fileName) {
    @return:
    String IP address
 */
-String IpAddressToString(const IPAddress& ipAddress)
-{
-  return String(ipAddress[0]) + String(".") + String(ipAddress[1]) + String(".") + String(ipAddress[2]) + String(".") + String(ipAddress[3])  ;
+String IpAddressToString(const IPAddress &ipAddress) {
+  return String(ipAddress[0]) + String(".") + String(ipAddress[1]) + String(".") + String(ipAddress[2]) + String(".") + String(ipAddress[3]);
 }
 
 
@@ -180,8 +175,7 @@ String IpAddressToString(const IPAddress& ipAddress)
    @brief:
    toggle light state
 */
-void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightState_3, uint8_t lightState_4)
-{
+void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightState_3, uint8_t lightState_4) {
   RSTATE.light_state_1 = !lightState_1;
   RSTATE.light_state_2 = !lightState_2;
   RSTATE.light_state_3 = !lightState_3;
@@ -191,40 +185,36 @@ void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightS
   PSTATE.light_state_3 = !lightState_3;
   PSTATE.light_state_4 = !lightState_4;
   //RSTATE.light_state = !RSTATE.light_state;
-  DEBUG_PRINTF("toggle light1 state to: %d and light2 state to: %d\n", !lightState_1,!lightState_2);
-  digitalWrite(RELAY_PIN_1,RSTATE.light_state_1);
-  digitalWrite(RELAY_PIN_2,RSTATE.light_state_2);
-  digitalWrite(RELAY_PIN_3,RSTATE.light_state_3);
-  digitalWrite(RELAY_PIN_4,RSTATE.light_state_4);
+  DEBUG_PRINTF("toggle light1 state to: %d and light2 state to: %d\n", !lightState_1, !lightState_2);
+  digitalWrite(RELAY_PIN_1, RSTATE.light_state_1);
+  digitalWrite(RELAY_PIN_2, RSTATE.light_state_2);
+  digitalWrite(RELAY_PIN_3, RSTATE.light_state_3);
+  digitalWrite(RELAY_PIN_4, RSTATE.light_state_4);
 }
 
 /**
    @brief:
    get current light state
 */
-void currentLightState()
-{
+void currentLightState() {
   RSTATE.light_state_1 = digitalRead(RELAY_PIN_1);
   RSTATE.light_state_2 = digitalRead(RELAY_PIN_2);
   RSTATE.light_state_3 = digitalRead(RELAY_PIN_3);
   RSTATE.light_state_4 = digitalRead(RELAY_PIN_4);
-  DEBUG_PRINTF("Light 1 current state is: %d, for Light 2 its: %d, for Light 3 its: %d, for Light 4 its: %d\n", 
-  RSTATE.light_state_1,
-  RSTATE.light_state_2,
-  RSTATE.light_state_3,
-  RSTATE.light_state_4);
+  DEBUG_PRINTF("Light 1 current state is: %d, for Light 2 its: %d, for Light 3 its: %d, for Light 4 its: %d\n",
+               RSTATE.light_state_1,
+               RSTATE.light_state_2,
+               RSTATE.light_state_3,
+               RSTATE.light_state_4);
 }
 
 /**
    @brief:
    blink Signal Led
 */
-void blinkSignalLed(uint8_t ledState)
-{
-    digitalWrite(SIG_PIN, ledState);
+void blinkSignalLed(uint8_t ledState) {
+  digitalWrite(SIG_PIN, ledState);
 }
 
 
 #endif
-
-

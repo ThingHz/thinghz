@@ -29,6 +29,7 @@ void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
   Wire.begin();
   DEBUG_PRINTLN("This is THingHz Smart Tissue Culture Rack");
   if (!EEPROM.begin(EEPROM_STORE_SIZE))
@@ -99,16 +100,14 @@ void setup()
   
   #ifdef THINGHZ_ARDUINO_USE_MODEM
     modemPowerKeyToggle();
-    SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
-    initialiseModem(&modem); //orwe can call init
-    checkNetwork(&modem);
-    if(checkNetwork(&modem)){
-        connectGPRS(&modem);
-    }
+    restartModem();
+    initialiseModem(); //orwe can call init
+    //checkNetwork();
+    /*if(checkNetwork()){
+        connectGPRS();
+    }*/
   #endif
-  
   sensorCheckTimer.attach(1, oneSecCallback);
-  Thinghz.sub_topic = MQTT_TOPIC_SUBSCRIBE;
 }
 
 void loop()
@@ -116,7 +115,7 @@ void loop()
   if (!RSTATE.isPortalActive)
   {
     #ifdef THINGHZ_ARDUINO_USE_MODEM
-      if(!checkNetwork(&modem) && !connectGPRS(&modem)){
+      if(!checkNetwork() && !connectGPRS()){
           DEBUG_PRINTLN("Error connecting to network");
       }else{
           RSTATE.isNetworkConnected = true;     
@@ -188,6 +187,7 @@ void loop()
     drawDisplay(RSTATE.displayEvents);
 #endif
     RSTATE.isReadSensorTimeout = false;
+    deviceState.store();
   }
 
   if (millis() - RSTATE.startPortal >= SECS_PORTAL_WAIT * MILLI_SECS_MULTIPLIER && RSTATE.isPortalActive)
@@ -207,7 +207,6 @@ void loop()
       blinkSignalLed(HIGH);
       RSTATE.isPayloadPostTimeout = false;
       DEBUG_PRINTLN(RSTATE.deviceEvents);
-      deviceState.store();
       sensorCheckTimer.attach(1, oneSecCallback);
   }
 }
@@ -269,6 +268,97 @@ void ThinghzActionsCallback(char* topic, byte* payload, unsigned int length) {
   free(actionJsonStr);
 }
 
+#ifdef THINGHZ_ARDUINO_USE_MODEM
+  
+/**
+      @brief: Connect Gprs
+      @param: TinyGsm pointer
+      @return: true when everything goes right
+*/
+bool connectGPRS() {
+  if (modem.isNetworkConnected() && !modem.isGprsConnected()) {
+    DEBUG_PRINTLN("GPRS not connected");
+    modem.gprsConnect("airtelgprs.com");
+  }
+  if (modem.isGprsConnected()) {
+    String dateTime = modem.getGSMDateTime(DATE_FULL);
+    DEBUG_PRINTF("Current Time : %s", dateTime);
+    return true;
+  }
+  return false;
+}
+
+/**
+      @brief: Initialise Modem
+      @param: TinyGsm pointer
+      @return: true when everything goes write
+*/
+bool initialiseModem() {
+  ESP_LOGI("initialiseModem","initialising Modem");
+  int ret = modem.init();
+  String modemInfo = modem.getModemInfo();
+  ESP_LOGI("initialiseModem", "modemInfo: %s\n SimStatue: %d\n", modemInfo.c_str(), modem.getSimStatus());
+  modem.setNetworkMode(2);
+  if (modem.getSimStatus() == 0) {
+        ESP_LOGI("initialiseModem", "Sim Status Zero");
+  }
+  return ret;
+}
+
+/**
+        @brief: restart Modem
+        @param: TinyGsm pointer
+        @return: true when everything goes write
+*/
+bool restartModem() {
+  int ret = modem.restart();
+  String modemInfo = modem.getModemInfo();
+  ESP_LOGI("restartModem", "modemInfo: %s\n SimStatue: %d\n", modemInfo.c_str(), modem.getSimStatus());
+  modem.setNetworkMode(2);
+  if (modem.getSimStatus() == 0) {
+    ESP_LOGI("restartModem", "Sim Status Zero");
+  } 
+  return ret;
+}
+
+/**
+      @brief: Check Network or Restart modem
+      @param: TinyGsm pointer
+      @return: true when everything goes right
+*/
+bool checkNetwork() {
+  static int gsm_retries = 0;
+  if (!modem.isNetworkConnected()) {
+    DEBUG_PRINTLN("Network not available");
+    modem.waitForNetwork();
+    gsm_retries++;
+    DEBUG_PRINTF("Network Try: %d\n",gsm_retries);
+    if (gsm_retries >= RSTATE.gsmConnectionRetries) {
+      restartModem();
+    }
+    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_NoNetwork);
+    return false;
+  }
+  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_NoNetwork);
+
+  return true;
+}
+
+/**
+   @brief:
+   Power On modem
+*/
+void modemPowerKeyToggle() {
+  DEBUG_PRINTLN("Power On modem");
+  digitalWrite(MODEM_PWKEY, LOW);
+  delay(100);
+  digitalWrite(MODEM_PWKEY, HIGH);
+  delay(1000);
+  digitalWrite(MODEM_PWKEY, LOW);
+  //digitalWrite(MODEM_FLIGHT, HIGH);
+}
+
+#endif
 
 
 

@@ -1,5 +1,6 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef MODEM_FUNC_H
+#define MODEM_FUNC_H
+
 #include "hardwareDefs.h"
 /**
    @brief:
@@ -21,21 +22,17 @@ void modemPowerKeyToggle() {
         @return: true when everything goes write
 */
 
-bool restartModem(TinyGsm *modem)
-{
-  int ret = modem->restart();
-  String modemInfo = modem->getModemInfo();
-  DEBUG_PRINTF("modemInfo: %s\n SimStatue: %d\n", modemInfo.c_str(), modem->getSimStatus());
-  modem->setNetworkMode(2);
-  if (modem->getSimStatus() == 0)
-  {
+bool restartModem() {
+  int ret = modem.restart();
+  String modemInfo = modem.getModemInfo();
+  DEBUG_PRINTF("modemInfo: %s\n SimStatue: %d\n", modemInfo.c_str(), modem.getSimStatus());
+  modem.setNetworkMode(2);
+  if (modem.getSimStatus() == 0) {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero);
-  }
-  else
-  {
+  } else {
     clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero);
   }
-  
+
   return ret;
 }
 
@@ -45,21 +42,17 @@ bool restartModem(TinyGsm *modem)
       @return: true when everything goes write
 */
 
-bool initialiseModem(TinyGsm *modem)
-{
+bool initialiseModem() {
   DEBUG_PRINTLN("initialising Modem");
-  int ret = modem->init();
-  String modemInfo = modem->getModemInfo();
-  DEBUG_PRINTF("modemInfo: %s\n SimStatus: %d\n", modemInfo.c_str(), modem->getSimStatus());
-  modem->setNetworkMode(2);
-  if (modem->getSimStatus() == 0)
-  {
+  int ret = modem.init();
+  String modemInfo = modem.getModemInfo();
+  DEBUG_PRINTF("modemInfo: %s\n SimStatus: %d\n", modemInfo.c_str(), modem.getSimStatus());
+  modem.setNetworkMode(2);
+  if (modem.getSimStatus() == 0) {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero);
+  } else {
   }
-  else
-  {
-  }
-  
+
   return ret;
 }
 
@@ -69,23 +62,22 @@ bool initialiseModem(TinyGsm *modem)
       @return: true when everything goes right
 */
 
-bool checkNetwork(TinyGsm *modem)
-{
+bool checkNetwork() {
   static int gsm_retries = 0;
-  if(!modem->isNetworkConnected()){
-      DEBUG_PRINTLN("Network not available");
-      if(!modem->waitForNetwork()){
-        delay(4000);
-      }
-      gsm_retries++;
-      if(gsm_retries >= RSTATE.gsmConnectionRetries){
-          restartModem(&modem);
-      }
-      setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_NoNetwork);
-      return false
+  if (!modem.isNetworkConnected()) {
+    DEBUG_PRINTLN("Network not available");
+    if (!modem.waitForNetwork()) {
+      delay(4000);
+    }
+    gsm_retries++;
+    if (gsm_retries >= RSTATE.gsmConnectionRetries) {
+      restartModem(&modem);
+    }
+    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_NoNetwork);
+    return false
   }
-    clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_NoNetwork);
-  
+  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_NoNetwork);
+
   return true;
 }
 
@@ -94,17 +86,16 @@ bool checkNetwork(TinyGsm *modem)
       @param: TinyGsm pointer
       @return: true when everything goes right
 */
-bool connectGPRS(TinyGsm *modem)
-{
-if(modem->isNetworkConnected() && !modem->isGprsConnected()){
-      DEBUG_PRINTLN("GPRS not connected");
-      modem->gprsConnect("airtelgprs.com");
+bool connectGPRS() {
+  if (modem.isNetworkConnected() && !modem.isGprsConnected()) {
+    DEBUG_PRINTLN("GPRS not connected");
+    modem.gprsConnect("airtelgprs.com");
   }
-   if(modem->isGprsConnected()){
-      String dateTime = modem->getGSMDateTime(DATE_FULL);
-      DEBUG_PRINTF("Current Time : %s", dateTime);
-      return true;
+  if (modem.isGprsConnected()) {
+    String dateTime = modem.getGSMDateTime(DATE_FULL);
+    DEBUG_PRINTF("Current Time : %s", dateTime);
+    return true;
   }
-return false;
+  return false;
 }
 #endif

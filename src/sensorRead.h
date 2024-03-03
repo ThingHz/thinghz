@@ -30,10 +30,8 @@ BH1750 lightMeter(0x23);
   clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
   return true;
 }*/
-bool shtInit()
-{
-  if (!sht4.begin(&Wire))
-  { // Set to 0x45 for alternate i2c addr
+bool shtInit() {
+  if (!sht4.begin(&Wire)) {  // Set to 0x45 for alternate i2c addr
     DEBUG_PRINTLN("Couldn't find SHT4x");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
@@ -50,10 +48,8 @@ bool shtInit()
    @return:
    true when initialisation success else set the deviceStateevent and return false
 */
-bool lightInit()
-{
-  if (!lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE))
-  { // Set to 0x45 for alternate i2c addr
+bool lightInit() {
+  if (!lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {  // Set to 0x45 for alternate i2c addr
     DEBUG_PRINTLN("Couldn't find BH1750");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_LIGHTFaulty);
     return false;
@@ -69,8 +65,7 @@ bool lightInit()
    @return:
    true when initialisation success and test the deviceStateEvent
 */
-bool isSHTAvailable()
-{
+bool isSHTAvailable() {
   return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
 }
 
@@ -81,12 +76,11 @@ bool isSHTAvailable()
    @return:
    true when initialisation success and test the deviceStateEvent
 */
-bool isLightAvailable(){
-    return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_LIGHTFaulty);  
+bool isLightAvailable() {
+  return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_LIGHTFaulty);
 }
 
-bool isSHTWorking()
-{
+bool isSHTWorking() {
   auto available = isSHTAvailable();
   auto notFaulty = !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
   return (available && notFaulty);
@@ -125,25 +119,23 @@ bool isSHTWorking()
 }*/
 bool readSHT() {
   sensors_event_t humidity, temp;
-  sht4.getEvent(&humidity, &temp);// populate temp and humidity objects with fresh data
+  sht4.getEvent(&humidity, &temp);  // populate temp and humidity objects with fresh data
 
   float temp_sht = temp.temperature;
 
   float humid_sht = humidity.relative_humidity;
 
-  if (isnan(temp_sht))
-  { // check if 'is not a number'
+  if (isnan(temp_sht)) {  // check if 'is not a number'
     DEBUG_PRINTLN("Failed to read temperature");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  if (isnan(humid_sht))
-  { // check if 'is not a number'
+  if (isnan(humid_sht)) {  // check if 'is not a number'
     DEBUG_PRINTLN("Failed to read humidity");
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  RSTATE.temperature = temp_sht; 
+  RSTATE.temperature = temp_sht;
   RSTATE.humidity = humid_sht;
 
   return true;
@@ -155,9 +147,8 @@ bool readSHT() {
    @return:
    true when readings are success
 */
-bool readLight(){
-  if (lightMeter.measurementReady())
-  { 
+bool readLight() {
+  if (lightMeter.measurementReady()) {
     float luxValues = lightMeter.readLightLevel();
     RSTATE.lux = luxValues;
     return true;
