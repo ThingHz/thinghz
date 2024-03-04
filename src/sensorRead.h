@@ -135,8 +135,8 @@ bool readSHT() {
     setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
     return false;
   }
-  RSTATE.temperature = temp_sht;
-  RSTATE.humidity = humid_sht;
+  RSTATE.temperature = temp_sht + PSTATE.tempCalibration;
+  RSTATE.humidity = humid_sht + PSTATE.humidCalibration;
 
   return true;
 }
@@ -150,7 +150,7 @@ bool readSHT() {
 bool readLight() {
   if (lightMeter.measurementReady()) {
     float luxValues = lightMeter.readLightLevel();
-    RSTATE.lux = luxValues;
+    RSTATE.lux = luxValues + PSTATE.lightCalibration;
     return true;
   }
   DEBUG_PRINTLN("Failed to get lux Values");

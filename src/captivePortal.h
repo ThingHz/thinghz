@@ -26,11 +26,11 @@ const char HTTP_FORM_WIFISET[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head
 <style>body { background-color: #0067B3 ; font-family: Arial, Helvetica, Sans-Serif; Color: #FFFFFF; }input[type=text], select {width: 100%;padding: 12px 20px;margin: 8px 0;display: inline-block;border: 1px solid #ccc;border-radius: 4px;box-sizing: border-box;}</style></head>
 <body><center>
 	<h1 style="color:#ffffff; font-family:Times New Roman,Times,Serif;padding-top: 10px;padding-bottom: 5px;font-size: 70px;font-style: oblique">ThingHz</h1>
-	<br><label style="color:#FFFFFF;font-family:Times New Roman,Times,Serif;font-size: 24px;padding-top: 5px;padding-bottom: 10px;">Configure Device Settings</label><br><br>
+	<br><label style="color:#FFFFFF;font-family:Times New Roman,Times,Serif;font-size: 24px;padding-top: 5px;padding-bottom: 10px;">Configure APN Settings</label><br><br>
 	<FORM action="/cred" method= "get">
 		<P><label style="font-family:Times New Roman">WiFi SSID</label><br><input maxlength="30px" type = "text" name="ssid" id="ssid" placeholder= "SSID" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;>
 		<br><label style="font-family:Times New Roman">WiFi Password</label><br><input maxlength="30px" type = "text" name="pass" id="pass" placeholder= "Password" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" required;><br>
-		<br><label style="font-family:Times New Roman">Device ID</label><br><input maxlength="30px" type = "text" name="device" id="device" placeholder= "deviceId" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box"><br>
+		<br><label style="font-family:Times New Roman">APN</label><br><input maxlength="30px" type = "text" name="apn" id="apn" placeholder= "APN" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box"><br>
     </P>
 		<INPUT type="submit"><style>input[type="submit"]{background-color: #3498DB; border: none;color: white;padding:15px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;}</style><br><br>
 	</FORM>
@@ -49,7 +49,7 @@ const char HTTP_FORM_SET_CALLIBRATION_FACTOR[] PROGMEM = R"rawliteral(<!DOCTYPE 
         <h3 style="color:#FFFFFF;font-family:Times New Roman,Times,Serif;padding-bottom: 20px;text-align: center;font-size: 20px">Set Calibration</h3>
         <P><label style="font-family:Times New Roman">Temperature Calibration</label><br><input maxlength="30px" type = "text" name="tempcal" id="tempcal" placeholder= "Temperature calibration" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box">
         <br><label style="font-family:Times New Roman">Humid Calibration</label><br><input maxlength="30px" type = "text" name="humidcal" id="humidcal" placeholder= "Humidity Calibration" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box" >
-        <br><label style="font-family:Times New Roman">CO2 Calibration</label><br><input maxlength="30px" type = "text" name="carboncal" id="carboncal" placeholder= "CO2 calibration" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box"><br>
+        <br><label style="font-family:Times New Roman">Light Calibration</label><br><input maxlength="30px" type = "text" name="lightcal" id="lightcal" placeholder= "Light calibration" style="width: 400px; padding: 5px 10px ; margin: 8px 0; border : 2px solid #3498DB; border-radius: 4px; box-sizing:border-box"><br>
         </P>
         <INPUT type="submit" > <style>input[type="submit"]{background-color: #3498DB;border: none;color: white;padding:10px 48px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;}</style></div>
       </FORM>
@@ -95,9 +95,10 @@ public:
 
     server.on("/cred", HTTP_GET, [](AsyncWebServerRequest* request) {
       if (request->params() > 0 && request->hasParam("ssid") && request->hasParam("pass")) {
-        if (request->hasParam("device")) {
-          PSTATE.deviceId = request->getParam("device")->value();
-          DEBUG_PRINTF("device stored %s\t\n", PSTATE.deviceId.c_str());
+        
+        if (request->hasParam("apn")) {
+          PSTATE.apn = request->getParam("apn")->value();
+          DEBUG_PRINTF("apn stored %s\t\n", PSTATE.apn.c_str());
         }
 
         PSTATE.apSSID = request->getParam("ssid")->value();
@@ -105,8 +106,8 @@ public:
         PSTATE.apPass = request->getParam("pass")->value();
         DEBUG_PRINTF("Pass Stored %s\t\n", PSTATE.apPass.c_str());
 
-        if (request->hasParam("device")) {
-          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"deviceId\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), (PSTATE.deviceId).c_str());
+        if (request->hasParam("apn")) {
+          snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s,\"apn\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), (PSTATE.apn).c_str());
           request->send(200, "application/json", credResponsePayload);
         } else {
           snprintf(credResponsePayload, RESPONSE_LENGTH, "{\"apSSID\":%s,\"apPass\":%s}", (PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str());
@@ -117,7 +118,7 @@ public:
       }
     });
 
-    /*server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
+    server.on("/call", HTTP_GET, [](AsyncWebServerRequest * request) {
         if (request->params() > 0) {
           if (request->hasParam("tempcal")) {
             PSTATE.tempCalibration = (request->getParam("tempcal")->value()).toInt();
@@ -128,25 +129,16 @@ public:
             DEBUG_PRINTF("humid calibration stored %d\t\n", PSTATE.humidCalibration);
           }
           if (request->hasParam("")) {
-            PSTATE.carbonCalibration = (request->getParam("carboncal")->value()).toInt();
-            DEBUG_PRINTF("carbon calibration stored %d\t\n", PSTATE.carbonCalibration);
-          }
-        
-          
-          snprintf(callResponsePayload, RESPONSE_LENGTH, "{\"tempCalibration\":%d,\"humidCalibration\":%d,\"carbonCalibration\":%d}", PSTATE.tempCalibration,PSTATE.humidCalibration,PSTATE.carbonCalibration);
+            PSTATE.lightCalibration = (request->getParam("lightcal")->value()).toInt();
+            DEBUG_PRINTF("light calibration stored %d\t\n", PSTATE.lightCalibration);
+          } 
+          snprintf(callResponsePayload, RESPONSE_LENGTH, "{\"tempCalibration\":%d,\"humidCalibration\":%d,\"lightCalibration\":%d}", PSTATE.tempCalibration,PSTATE.humidCalibration,PSTATE.lightCalibration);
            request->send(200, "application/json", callResponsePayload);
         } else {
           request->send_P(200, "text/html", HTTP_FORM_SET_CALLIBRATION_FACTOR);
         }
-      });*/
+      });
 
-
-    server.on("/check", HTTP_GET, [](AsyncWebServerRequest* request) {
-      String isSuccess = "true";
-      snprintf(checkResponsePayload, RESPONSE_LENGTH, "{\"Success\":\"%s\",\"DeviceId\":\"%s\"}",
-               isSuccess.c_str(), (PSTATE.deviceId).c_str());
-      request->send(200, "application/json", checkResponsePayload);
-    });
 
     server.onNotFound(_handleNotFound);
     yield();

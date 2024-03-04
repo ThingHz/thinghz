@@ -179,6 +179,13 @@ const char* MQTT_TOPIC_SUBSCRIBE = "aws/thing/thinghz/light";
 #define WAN_WIFI_SSID_DEFAULT "Sarthak"
 #define WAN_WIFI_PASS_DEFAULT "wireless18"
 
+/**
+ * @brief 
+ * APN Configuration default preprocessors
+ */
+#define APN_DEFAULT "airtelgprs.com"
+
+
 //ThingHz default Device Id
 #define DEVICE_ID_DEFAULT "THING00001"
 
@@ -219,6 +226,7 @@ const char* MQTT_TOPIC_SUBSCRIBE = "aws/thing/thinghz/light";
 #define CALIBRATION_LEVEL_TEMP 0
 #define CALIBRATION_LEVEL_HUMID 0
 #define CALIBRATION_LEVEL_CARBON 0
+#define CALIBRATION_LEVEL_LIGHT 0
 
 #define ALTITUDE_FOR_SCD 327
 

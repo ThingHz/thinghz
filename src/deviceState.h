@@ -8,7 +8,8 @@
    @brief:
    Device State Enum
 */
-enum DeviceStateEvent {
+enum DeviceStateEvent
+{
   DSE_None = 0,
   DSE_SHTFaulty = 1,
   DSE_GASFaulty = 1 << 2,
@@ -23,7 +24,8 @@ enum DeviceStateEvent {
   DSE_SubscribeFailed = 1 << 11
 };
 
-enum DisplayMode {
+enum DisplayMode
+{
   DisplayNone,
   DisplayTemp,
   DisplayTempHumid,
@@ -39,43 +41,44 @@ enum DisplayMode {
   DisplayEventActionReceived
 };
 
-//advance declaration
+// advance declaration
 class PersistantStateStorageFormat;
-
 
 /**
    @brief:
    Class for runtime Device status
 */
-class RunTimeState {
+class RunTimeState
+{
 public:
   RunTimeState()
-    : deviceEvents(DeviceStateEvent::DSE_None),
-      displayEvents(DisplayMode::DisplayNone),
-      isNetworkConnected(false),
-      isAPActive(false),
-      isPortalActive(false),
-      startPortal(0),
-      isThinghzBegin(false),
-      macAddr(DEVICE_ID_DEFAULT),
-      batteryPercentage(100),
-      temperature(INVALID_TEMP_READING),
-      humidity(INVALID_HUMIDITY_READING),
-      carbon(INVALID_CO2_READING),
-      lux(INVALUD_LUX_READING),
-      light_state_1(DEFAULT_STATE_READING),
-      light_state_2(DEFAULT_STATE_READING),
-      light_state_3(DEFAULT_STATE_READING),
-      light_state_4(DEFAULT_STATE_READING),
-      light_thresh(DEFAULT_THRESH_READING),
-      isReadSensorTimeout(false),
-      isPayloadPostTimeout(false),
-      isSwitchToGSMRequired(false),
-      isMqttConnectionTimeout(false),
-      isMQTTConnected(false),
-      isNetworkActive(false),
-      gsmConnectionRetries(MAX_GSM_RETRIES),
-      gsm_time(CURRENT_TIME) {
+      : deviceEvents(DeviceStateEvent::DSE_None),
+        displayEvents(DisplayMode::DisplayNone),
+        isNetworkConnected(false),
+        isAPActive(false),
+        isPortalActive(false),
+        startPortal(0),
+        isThinghzBegin(false),
+        macAddr(DEVICE_ID_DEFAULT),
+        batteryPercentage(100),
+        temperature(INVALID_TEMP_READING),
+        humidity(INVALID_HUMIDITY_READING),
+        carbon(INVALID_CO2_READING),
+        lux(INVALUD_LUX_READING),
+        light_state_1(DEFAULT_STATE_READING),
+        light_state_2(DEFAULT_STATE_READING),
+        light_state_3(DEFAULT_STATE_READING),
+        light_state_4(DEFAULT_STATE_READING),
+        light_thresh(DEFAULT_THRESH_READING),
+        isReadSensorTimeout(false),
+        isPayloadPostTimeout(false),
+        isSwitchToGSMRequired(false),
+        isMqttConnectionTimeout(false),
+        isMQTTConnected(false),
+        isNetworkActive(false),
+        gsmConnectionRetries(MAX_GSM_RETRIES),
+        gsm_time(CURRENT_TIME)
+  {
   }
 
   uint deviceEvents;
@@ -111,31 +114,50 @@ public:
    Class EEPROM device format
 */
 
-class PersistantState {
+class PersistantState
+{
 public:
   PersistantState()
-    : apSSID(WAN_WIFI_SSID_DEFAULT),
-      apPass(WAN_WIFI_PASS_DEFAULT),
-      deviceId(DEVICE_ID_DEFAULT),
-      light_state_1(1),
-      light_state_2(1),
-      light_state_3(1),
-      light_state_4(1) {
+      : apSSID(WAN_WIFI_SSID_DEFAULT),
+        apPass(WAN_WIFI_PASS_DEFAULT),
+        apn(APN_DEFAULT),
+        tempCalibration(CALIBRATION_LEVEL_TEMP),
+        humidCalibration(CALIBRATION_LEVEL_HUMID),
+        lightCalibration(CALIBRATION_LEVEL_LIGHT),
+        light_state_1(1),
+        light_state_2(1),
+        light_state_3(1),
+        light_state_4(1)
+  {
   }
 
-  PersistantState(const PersistantStateStorageFormat& persistantStore);
+  PersistantState(const PersistantStateStorageFormat &persistantStore);
 
-  bool operator==(const PersistantState& rhs) {
-    return ((apSSID == rhs.apSSID) && (apPass == rhs.apPass) && (deviceId == rhs.deviceId) && (light_state_1 == rhs.light_state_1) && (light_state_2 == rhs.light_state_2) && (light_state_3 == rhs.light_state_3) && (light_state_4 == rhs.light_state_4));
+  bool operator==(const PersistantState &rhs)
+  {
+    return ((apSSID == rhs.apSSID) &&
+            (apPass == rhs.apPass) &&
+            (apn == rhs.apn) &&
+            (light_state_1 == rhs.light_state_1) &&
+            (light_state_2 == rhs.light_state_2) &&
+            (light_state_3 == rhs.light_state_3) &&
+            (light_state_4 == rhs.light_state_4) &&
+            (tempCalibration == rhs.tempCalibration) &&
+            (humidCalibration == rhs.humidCalibration) &&
+            (lightCalibration == rhs.lightCalibration));
   }
   // public data members
   String apSSID;
   String apPass;
-  String deviceId;
+  String apn;
   uint8_t light_state_1;
   uint8_t light_state_2;
   uint8_t light_state_3;
   uint8_t light_state_4;
+  int tempCalibration;
+  int humidCalibration;
+  int lightCalibration;
+  
 };
 
 /**
@@ -146,35 +168,47 @@ public:
    read back as is. It was required because we don't want to deal with c strings in rest of the code.
 */
 
-struct PersistantStateStorageFormat {
+struct PersistantStateStorageFormat
+{
 public:
   PersistantStateStorageFormat() {}
-  PersistantStateStorageFormat(const PersistantState& persistantState);
+  PersistantStateStorageFormat(const PersistantState &persistantState);
   char version[8];
   char apSSID[30];
-  char deviceId[30];
   char apPass[30];
+  char apn[20];
+  int tempCalibration;
+  int humidCalibration;
+  int lightCalibration;
   uint8_t light_state_1;
   uint8_t light_state_2;
   uint8_t light_state_3;
   uint8_t light_state_4;
 } __attribute__((packed));
 
-PersistantState::PersistantState(const PersistantStateStorageFormat& persistantStore) {
+PersistantState::PersistantState(const PersistantStateStorageFormat &persistantStore)
+{
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
-  deviceId = String(persistantStore.deviceId);
+  apn = String(persistantStore.apn);
+  tempCalibration = persistantStore.tempCalibration;
+  humidCalibration = persistantStore.humidCalibration;
+  lightCalibration = persistantStore.lightCalibration;
   light_state_1 = persistantStore.light_state_1;
   light_state_2 = persistantStore.light_state_2;
   light_state_3 = persistantStore.light_state_3;
   light_state_4 = persistantStore.light_state_4;
 }
 
-PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState& persistantState) {
+PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState &persistantState)
+{
   strcpy(version, EEPROM_STORAGE_FORMAT_VERSION);
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
-  strcpy(deviceId, persistantState.deviceId.c_str());
+  strcpy(apn, persistantState.apn.c_str());
+  tempCalibration = persistantState.tempCalibration;
+  humidCalibration = persistantState.humidCalibration;
+  lightCalibration = persistantState.lightCalibration;
   light_state_1 = persistantState.light_state_1;
   light_state_2 = persistantState.light_state_2;
   light_state_3 = persistantState.light_state_3;
@@ -187,47 +221,54 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
    @todo:
    We need to switch from EEPROM to RTC
 */
-typedef struct {
+typedef struct
+{
   int isEscalation;
   int missedDataPoint;
   int wakeUpCount;
 } RTCState;
 RTC_DATA_ATTR RTCState rtcState;
 
-class DeviceState {
+class DeviceState
+{
 public:
   // public data members
   RunTimeState runTimeState;
   PersistantState persistantState;
 
-
-  DeviceState() {
+  DeviceState()
+  {
     /**
          @todo:There was a problem in begining it here
       */
-    //EEPROM.begin(EEPROM_STORE_SIZE);
+    // EEPROM.begin(EEPROM_STORE_SIZE);
   }
-  ~DeviceState() {
+  ~DeviceState()
+  {
     EEPROM.end();
   }
 
   /**
        @brief:Load and Store helper functions
     */
-  bool store() {
+  bool store()
+  {
     bool retValue = false;
     retValue = storeEEPROM();
-    if (!retValue) {
+    if (!retValue)
+    {
       DEBUG_PRINTLN("Problem Storing to EEPROM");
       return false;
     }
     return retValue;
   }
 
-  bool load() {
+  bool load()
+  {
     bool retValue = false;
     retValue = loadEEPROM();
-    if (!retValue) {
+    if (!retValue)
+    {
       DEBUG_PRINTLN("Problem loading from EEPROM");
       return false;
     }
@@ -237,8 +278,10 @@ public:
 private:
   PersistantState eepromRealState;
 
-  bool storeEEPROM() {
-    if (persistantState == eepromRealState) {
+  bool storeEEPROM()
+  {
+    if (persistantState == eepromRealState)
+    {
       DEBUG_PRINTLN("nothing to write, state hasn't changed since last read/write");
       return true;
     }
@@ -251,10 +294,12 @@ private:
     return true;
   }
 
-  bool loadEEPROM() {
+  bool loadEEPROM()
+  {
     PersistantStateStorageFormat persistantStore;
     EEPROM.get(0, persistantStore);
-    if (strcmp(persistantStore.version, EEPROM_STORAGE_FORMAT_VERSION) != 0) {
+    if (strcmp(persistantStore.version, EEPROM_STORAGE_FORMAT_VERSION) != 0)
+    {
       DEBUG_PRINTLN("storage format doens't match, let defaults load, will become proper in next write.");
       return true;
     }
@@ -263,15 +308,16 @@ private:
     return true;
   }
 
-  bool storeSPIFF() {
+  bool storeSPIFF()
+  {
     return true;
   }
 };
 
-extern DeviceState& deviceState;
+extern DeviceState &deviceState;
 
 // just shortening macros
 #define RSTATE deviceState.runTimeState
 #define PSTATE deviceState.persistantState
 
-#endif  // DEVICESTATE_H
+#endif // DEVICESTATE_H
