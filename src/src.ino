@@ -278,7 +278,7 @@ void ThinghzActionsCallback(char* topic, byte* payload, unsigned int length) {
 bool connectGPRS() {
   if (modem.isNetworkConnected() && !modem.isGprsConnected()) {
     DEBUG_PRINTLN("GPRS not connected");
-    modem.gprsConnect("airtelgprs.com");
+    modem.gprsConnect((PSTATE.apn).c_str());
   }
   if (modem.isGprsConnected()) {
     String dateTime = modem.getGSMDateTime(DATE_FULL);
