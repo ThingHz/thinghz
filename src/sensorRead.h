@@ -4,7 +4,6 @@
 #include "Adafruit_SHT4x.h"
 #include "deviceState.h"
 #include "utils.h"
-#include "SparkFun_SCD4x_Arduino_Library.h" 
 #include "BH1750.h"
 
 
@@ -51,25 +50,6 @@ bool lightInit()
 }
 
 
-/**
-   @brief:
-   Initialise SCD40
-   @return:
-   true when initialisation success else set the deviceStateevent and return false
-*/
-bool scdInit(SCD4x *scd_sensor)
-{
-  if (!scd_sensor->begin())
-  {
-    DEBUG_PRINTLN("Couldn't find SCD");
-    setBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_GASFaulty);
-    return false;
-  }
-  scd_sensor->setSensorAltitude(ALTITUDE_FOR_SCD); 
-  clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_GASFaulty);
-  return true;
-}
-
 
 /**
    @brief:
@@ -82,16 +62,6 @@ bool isSHTAvailable()
   return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SHTFaulty);
 }
 
-
-/**
-   @brief:
-   test the bit status 
-   @return:
-   true when initialisation success and test the deviceStateEvent
-*/
-bool isSCDAvailable(){
-    return !testBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_GASFaulty);  
-}
 
 /**
    @brief:
@@ -144,22 +114,6 @@ bool readSHT() {
 }
 
 
-/**
-   @brief:
-   read SCD value 
-   @return:
-   true when readings are success
-*/
-bool readSCD(SCD4x *scd_sensor){
-  if (scd_sensor->readMeasurement())
-  { 
-    uint16_t carbonValue = scd_sensor->getCO2();
-    RSTATE.carbon = carbonValue + PSTATE.carbonCalibration;
-    return true;
-  }
-  DEBUG_PRINTLN("Failed to get CO2 Values");
-  return false;
-}
 
 /**
    @brief:
@@ -171,7 +125,7 @@ bool readLight(){
   if (lightMeter.measurementReady())
   { 
     float luxValues = lightMeter.readLightLevel();
-    RSTATE.lux = luxValues;
+    RSTATE.lux = luxValues + PSTATE.lightCalibration;
     return true;
   }
   DEBUG_PRINTLN("Failed to get lux Values");

@@ -318,8 +318,10 @@ public:
       PAYLOAD_LIGHT.humidity = RSTATE.humidity;
       PAYLOAD_LIGHT.lightState1 = !RSTATE.light_state_1;
       PAYLOAD_LIGHT.lightState2 = !RSTATE.light_state_2;
+      PAYLOAD_LIGHT.lightState3 = !RSTATE.light_state_3;
+      PAYLOAD_LIGHT.lightState4 = !RSTATE.light_state_4;
       PAYLOAD_LIGHT.lux = RSTATE.lux;
-      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"lux\":\"%.1f\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d,\"light_state_1\":%u,\"light_state_2\":%u}",
+      snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"lux\":\"%.1f\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d,\"light_state_1\":%u,\"light_state_2\":%u,\"light_state_3\":%u,\"light_state_4\":%u}",
                (macAddrWithoutColons()).c_str(),
                PAYLOAD_LIGHT.lux,
                PAYLOAD_LIGHT.temp,
@@ -327,7 +329,9 @@ public:
                RSTATE.batteryPercentage,
                PAYLOAD_LIGHT.sensorProfile,
                PAYLOAD_LIGHT.lightState1,
-               PAYLOAD_LIGHT.lightState2);
+               PAYLOAD_LIGHT.lightState2,
+               PAYLOAD_LIGHT.lightState3,
+               PAYLOAD_LIGHT.lightState4);
       break;
     default:
       DEBUG_PRINTLN("Not a valid Sensor");
@@ -405,24 +409,19 @@ public:
     int lightState2=0;
     int lightState3=0;
     int lightState4=0;
-    if (subscribeJson.containsKey("light_state_1")) {
-         lightState1 = subscribeJson["light_state_1"];
-         
-      }
+     if (subscribeJson.containsKey("light_state_1")) {
+      lightState1 = subscribeJson["light_state_1"];
+    }
     if (subscribeJson.containsKey("light_state_2")) {
-         lightState2 = subscribeJson["light_state_2"];
-      }
-      if (subscribeJson.containsKey("light_state_3")) {
-         lightState1 = subscribeJson["light_state_3"];
-         
-      }
+      lightState2 = subscribeJson["light_state_2"];
+    }
+    if (subscribeJson.containsKey("light_state_3")) {
+      lightState3 = subscribeJson["light_state_3"];
+    }
     if (subscribeJson.containsKey("light_state_4")) {
-         lightState2 = subscribeJson["light_state_4"];
-      }
-    toggleLightState((uint8_t)lightState1, (uint8_t)lightState2, (uint8_t)lightState3, (uint8_t)lightState4);   
-    if (subscribeJson.containsKey("light_thresh"))
-        RSTATE.light_thresh = subscribeJson["light_thresh"];
-    DEBUG_PRINTF("light intesity is %d",RSTATE.light_thresh);
+      lightState4 = subscribeJson["light_state_4"];
+    }
+    toggleLightState((uint8_t)lightState1, (uint8_t)lightState2, (uint8_t)lightState3, (uint8_t)lightState4);    
     
     return true; 
   }

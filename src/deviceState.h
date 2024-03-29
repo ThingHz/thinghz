@@ -9,17 +9,18 @@
    Device State Enum
 */
 enum DeviceStateEvent {
-  DSE_None                    = 0,
-  DSE_SHTDisconnected         = 1,
-  DSE_SHTFaulty               = 1 << 1,
-  DSE_GASFaulty               = 1 << 7,
-  DSE_LIGHTFaulty             = 1 << 9,
-  DSE_DisplayDisconnected     = 1 << 10,
-  DSE_SimStatusZero           = 1 << 11,
-  DSE_ConnectMqttFailed       = 1 << 12,
-  DSE_MessagePublishFailed    = 1 << 13,
-  DSE_StartMqttFailed         = 1 << 14,
-  DSE_SubscribeFailed         = 1 << 15,
+ DSE_None = 0,
+  DSE_SHTFaulty = 1,
+  DSE_GASFaulty = 1 << 2,
+  DSE_LIGHTFaulty = 1 << 3,
+  DSE_DisplayDisconnected = 1 << 4,
+  DSE_SimStatusZero = 1 << 5,
+  DSE_NoNetwork = 1 << 6,
+  DSE_ConnectMqttFailed = 1 << 7,
+  DSE_MessagePublishFailed = 1 << 8,
+  DSE_StartMqttFailed = 1 << 9,
+  DSE_SHTDisconnected = 1 << 10,
+  DSE_SubscribeFailed = 1 << 11
 };
 
 enum DisplayMode {
@@ -51,6 +52,7 @@ class RunTimeState {
     RunTimeState():
       deviceEvents(DeviceStateEvent::DSE_None),
       displayEvents(DisplayMode::DisplayNone),
+      isNetworkConnected(false),
       isWiFiConnected(false),
       isAPActive(false),
       isPortalActive(false),
@@ -66,9 +68,9 @@ class RunTimeState {
       light_state_3(DEFAULT_STATE_READING),
       light_state_4(DEFAULT_STATE_READING),
       light_thresh(DEFAULT_THRESH_READING),
+      isSwitchToGSMRequired(false),
       isReadSensorTimeout(false),
       isPayloadPostTimeout(false),
-      isSwitchToGSMRequired(false),
       isMqttConnectionTimeout(false),
       isMQTTConnected(false),
       isNetworkActive(false),
@@ -80,6 +82,7 @@ class RunTimeState {
 
     uint deviceEvents;
     DisplayMode displayEvents;
+    bool isNetworkConnected;
     bool isWiFiConnected;
     bool isAPActive;
     bool isPortalActive;
@@ -114,16 +117,16 @@ class PersistantState {
   public:
     PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
       apPass(WAN_WIFI_PASS_DEFAULT),
-      deviceId(DEVICE_ID_DEFAULT),
+      apn(DEVICE_ID_DEFAULT),
       tempCalibration(CALIBRATION_LEVEL_TEMP),
       humidCalibration(CALIBRATION_LEVEL_HUMID),
-      carbonCalibration(CALIBRATION_LEVEL_CARBON),
+      lightCalibration(CALIBRATION_LEVEL_CARBON),
       isOtaAvailable(0),
       newfWVersion(0),
-      light_state_1(1),
-      light_state_2(1),
-      light_state_3(1),
-      light_state_4(1)
+      light_state_1(0),
+      light_state_2(0),
+      light_state_3(0),
+      light_state_4(0)
     {
 
     }
@@ -133,10 +136,10 @@ class PersistantState {
     bool operator==(const PersistantState& rhs) {
       return ((apSSID == rhs.apSSID) &&
               (apPass == rhs.apPass) &&
-              (deviceId == rhs.deviceId) &&
+              (apn == rhs.apn) &&
               (tempCalibration == rhs.tempCalibration) &&
               (humidCalibration == rhs.humidCalibration) &&
-              (carbonCalibration == rhs.carbonCalibration) &&
+              (lightCalibration == rhs.lightCalibration) &&
               (isOtaAvailable == rhs.isOtaAvailable) &&
               (newfWVersion == rhs.newfWVersion) &&
               (light_state_1 == rhs.light_state_1) &&
@@ -147,10 +150,10 @@ class PersistantState {
     // public data members
     String apSSID;
     String apPass;
-    String deviceId;
+    String apn;
     int tempCalibration;
     int humidCalibration;
-    int carbonCalibration;
+    int lightCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
     uint8_t light_state_1;
@@ -173,11 +176,11 @@ struct PersistantStateStorageFormat {
     PersistantStateStorageFormat(const PersistantState &persistantState);
     char version[8];
     char apSSID[30];
-    char deviceId[30];
+    char apn[30];
     char apPass[30];
     int tempCalibration;
     int humidCalibration;
-    int carbonCalibration;
+    int lightCalibration;
     uint8_t isOtaAvailable;
     uint8_t newfWVersion;
     uint8_t light_state_1;
@@ -190,10 +193,10 @@ PersistantState::PersistantState(const PersistantStateStorageFormat& persistantS
 {
   apSSID = String(persistantStore.apSSID);
   apPass = String(persistantStore.apPass);
-  deviceId = String(persistantStore.deviceId);
+  apn = String(persistantStore.apn);
   tempCalibration = persistantStore.tempCalibration ;
   humidCalibration = persistantStore.humidCalibration;
-  carbonCalibration = persistantStore.carbonCalibration;
+  lightCalibration = persistantStore.lightCalibration;
   isOtaAvailable = persistantStore.isOtaAvailable;
   newfWVersion = persistantStore.newfWVersion;
   light_state_1 = persistantStore.light_state_1;
@@ -207,10 +210,10 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
   strcpy(version, EEPROM_STORAGE_FORMAT_VERSION);
   strcpy(apSSID, persistantState.apSSID.c_str());
   strcpy(apPass, persistantState.apPass.c_str());
-  strcpy(deviceId, persistantState.deviceId.c_str());
+  strcpy(apn, persistantState.apn.c_str());
   tempCalibration = persistantState.tempCalibration;
   humidCalibration = persistantState.humidCalibration;
-  carbonCalibration = persistantState.carbonCalibration;
+  lightCalibration = persistantState.lightCalibration;
   isOtaAvailable = persistantState.isOtaAvailable;
   newfWVersion = persistantState.newfWVersion;
   light_state_1 = persistantState.light_state_1;

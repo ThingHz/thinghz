@@ -13,12 +13,9 @@
 #include <Ticker.h>
 #include <rom/rtc.h>
 #include <driver/adc.h>
-//#include "oledState.h"
 #include "tftState.h"
-//#include "SparkFun_SCD4x_Arduino_Library.h"
 #include "PubSubClient.h"
 #include "certs.h"
-#include "uuid.h"
 
 
 Ticker sensorCheckTimer;
@@ -116,6 +113,7 @@ void setup()
   secureClient.setCACert(cacert);
   secureClient.setCertificate(clientcert);
   secureClient.setPrivateKey(clientkey);
+  secureClient.setTimeout(3000);
   
   mqtt.setServer(MQTT_HOST_USING_PUBSUB, 8883);
   mqtt.setCallback(mqttCallback);
@@ -251,8 +249,7 @@ void mqtt_subscribe_task()
   {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    DEBUG_PRINTLN(StringUUIDGen());
-    if (mqtt.connect(StringUUIDGen().c_str()))
+    if (mqtt.connect("TTCR010124"))
     {
       RSTATE.isMQTTConnected = true;
       Serial.println("connected");

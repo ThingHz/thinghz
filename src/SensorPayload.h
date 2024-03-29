@@ -7,7 +7,7 @@
 
 
 enum SensorProfile {
-  SensorNone  = 1,
+  SensorNone = 1,
   SensorTemp,
   SensorTH,
   SensorGas,
@@ -25,67 +25,75 @@ const char* sensorProfileToString(uint8_t sProfile) {
 }
 
 struct SensorPayload {
-  public:
-    SensorPayload(): sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), batteryPercentage(BATTERY_INITIAL_READING) {
-    }
+public:
+  SensorPayload()
+    : sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), batteryPercentage(BATTERY_INITIAL_READING) {
+  }
 
-    uint8_t sensorProfile;
-    uint8_t hwRev;
-    uint8_t fwRev;
-    uint8_t batteryPercentage;
-} __attribute__ ((packed));
+  uint8_t sensorProfile;
+  uint8_t hwRev;
+  uint8_t fwRev;
+  uint8_t batteryPercentage;
+} __attribute__((packed));
 
 //Inherit properties of Sensor payload in other Sensor structure accoarding to Sensor Profile
 
 struct SensorPayloadT : public SensorPayload {
-  SensorPayloadT(): temp(INVALID_TEMP_READING) {
+  SensorPayloadT()
+    : temp(INVALID_TEMP_READING) {
     sensorProfile = SensorProfile::SensorTemp;
   }
 
   float temp;
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 struct SensorPayloadTH : public SensorPayloadT {
-  SensorPayloadTH(): humidity(INVALID_HUMIDITY_READING) {
+  SensorPayloadTH()
+    : humidity(INVALID_HUMIDITY_READING) {
     sensorProfile = SensorProfile::SensorTH;
   }
 
   float humidity;
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 
 struct SensorPayloadGas : public SensorPayloadTH {
-  SensorPayloadGas(): gas(INVALID_GAS_READING) {
+  SensorPayloadGas()
+    : gas(INVALID_GAS_READING) {
     sensorProfile = SensorProfile::SensorGas;
   }
 
   uint16_t gas;
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 struct SensorPayloadLight : public SensorPayloadTH {
-  SensorPayloadLight(): 
-  lux(INVALID_GAS_READING),
-  lightState1(DEFAULT_STATE_READING),
-  lightState2(DEFAULT_STATE_READING) {
+  SensorPayloadLight()
+    : lux(INVALID_GAS_READING),
+      lightState1(DEFAULT_STATE_READING),
+      lightState2(DEFAULT_STATE_READING),
+      lightState3(DEFAULT_STATE_READING),
+      lightState4(DEFAULT_STATE_READING) {
     sensorProfile = SensorProfile::SensorLight;
   }
 
   float lux;
   uint8_t lightState1;
   uint8_t lightState2;
-} __attribute__ ((packed));
+  uint8_t lightState3;
+  uint8_t lightState4;
+} __attribute__((packed));
 
 
-SensorPayload           sensorPayload;
-SensorPayloadT          sensorPayloadT;
-SensorPayloadTH         sensorPayloadTH;
-SensorPayloadGas        sensorPayloadGas;
-SensorPayloadLight      sensorPayloadLight;
+SensorPayload sensorPayload;
+SensorPayloadT sensorPayloadT;
+SensorPayloadTH sensorPayloadTH;
+SensorPayloadGas sensorPayloadGas;
+SensorPayloadLight sensorPayloadLight;
 
-#define PAYLOAD_NONE    sensorPayload
-#define PAYLOAD_T       sensorPayloadT
-#define PAYLOAD_TH      sensorPayloadTH
-#define PAYLOAD_GAS     sensorPayloadGas
-#define PAYLOAD_LIGHT   sensorPayloadLight
+#define PAYLOAD_NONE sensorPayload
+#define PAYLOAD_T sensorPayloadT
+#define PAYLOAD_TH sensorPayloadTH
+#define PAYLOAD_GAS sensorPayloadGas
+#define PAYLOAD_LIGHT sensorPayloadLight
 
 #endif

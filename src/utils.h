@@ -194,7 +194,7 @@ void modemPowerKeyToggle() {
    @brief:
    toggle light state
 */
-void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightState_3, uint8_t lightState_4){
+void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightState_3, uint8_t lightState_4) {
   RSTATE.light_state_1 = !lightState_1;
   RSTATE.light_state_2 = !lightState_2;
   RSTATE.light_state_3 = !lightState_3;
@@ -204,29 +204,25 @@ void toggleLightState(uint8_t lightState_1, uint8_t lightState_2, uint8_t lightS
   PSTATE.light_state_3 = !lightState_3;
   PSTATE.light_state_4 = !lightState_4;
   //RSTATE.light_state = !RSTATE.light_state;
-  DEBUG_PRINTF("toggle light1 state to: %d and light2 state to: %d\n", !lightState_1,!lightState_2);
-  digitalWrite(RELAY_PIN_1,RSTATE.light_state_1);
-  digitalWrite(RELAY_PIN_2,RSTATE.light_state_2);
-  digitalWrite(RELAY_PIN_3,RSTATE.light_state_3);
-  digitalWrite(RELAY_PIN_4,RSTATE.light_state_4);
+  DEBUG_PRINTF("toggle light1 state to: %d and light2 state to: %d\n", !lightState_1, !lightState_2);
+  digitalWrite(RELAY_PIN_1, RSTATE.light_state_1);
+  digitalWrite(RELAY_PIN_2, RSTATE.light_state_2);
+  digitalWrite(RELAY_PIN_3, RSTATE.light_state_3);
+  digitalWrite(RELAY_PIN_4, RSTATE.light_state_4);
 }
 
-/**
-   @brief:
-   get current light state
-*/
-void currentLightState()
-{
+void currentLightState() {
   RSTATE.light_state_1 = digitalRead(RELAY_PIN_1);
   RSTATE.light_state_2 = digitalRead(RELAY_PIN_2);
   RSTATE.light_state_3 = digitalRead(RELAY_PIN_3);
   RSTATE.light_state_4 = digitalRead(RELAY_PIN_4);
-  DEBUG_PRINTF("Light 1 current state is: %d, for Light 2 its: %d, for Light 3 its: %d, for Light 4 its: %d\n", 
-  RSTATE.light_state_1,
-  RSTATE.light_state_2,
-  RSTATE.light_state_3,
-  RSTATE.light_state_4);
+  DEBUG_PRINTF("Light 1 current state is: %d, for Light 2 its: %d, for Light 3 its: %d, for Light 4 its: %d\n",
+               RSTATE.light_state_1,
+               RSTATE.light_state_2,
+               RSTATE.light_state_3,
+               RSTATE.light_state_4);
 }
+
 
 /**
    @brief:
