@@ -92,8 +92,8 @@ String formApSsidName(String deviceId) {
 */
 #define RELAY_PIN_1 5  //Relay pin
 #define RELAY_PIN_2 33
-#define RELAY_PIN_3 14
-#define RELAY_PIN_4 13
+#define RELAY_PIN_3 13
+#define RELAY_PIN_4 14
 #define SIG_PIN 2  //Status Signal pin
 
 //Comment out to disable display

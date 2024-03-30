@@ -124,10 +124,10 @@ public:
         tempCalibration(CALIBRATION_LEVEL_TEMP),
         humidCalibration(CALIBRATION_LEVEL_HUMID),
         lightCalibration(CALIBRATION_LEVEL_LIGHT),
-        light_state_1(1),
-        light_state_2(1),
-        light_state_3(1),
-        light_state_4(1)
+        light_state_1(0),
+        light_state_2(0),
+        light_state_3(0),
+        light_state_4(0)
   {
   }
 
