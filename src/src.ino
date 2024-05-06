@@ -239,7 +239,7 @@ void mqtt_subscribe_task()
   }
   if(!modem.isGprsConnected()){
       DEBUG_PRINTLN("GPRS not connected");
-      modem.gprsConnect("airtelgprs.com");
+      modem.gprsConnect("airteliot.com");
   }
 
   if(modem.isGprsConnected()){
