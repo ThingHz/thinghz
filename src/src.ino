@@ -16,6 +16,7 @@
 #include "tftState.h"
 #include "PubSubClient.h"
 #include "certs.h"
+#include "uuid.h"
 
 
 Ticker sensorCheckTimer;
@@ -48,20 +49,20 @@ void setup()
   Serial.begin(115200);
   SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
   Wire.begin();
-  DEBUG_PRINTLN("This is THingHz Smart Tissue Culture Rack");
+  DEBUG_PRINTLN(F("This is THingHz Smart Tissue Culture Rack"));
   if (!EEPROM.begin(EEPROM_STORE_SIZE))
   {
-    DEBUG_PRINTLN("Problem loading EEPROM");
+    DEBUG_PRINTLN(F("Problem loading EEPROM"));
   }
 
   bool rc = deviceState.load();
   if (!rc)
   {
-    DEBUG_PRINTLN("EEPROM Values not loaded");
+    DEBUG_PRINTLN(F("EEPROM Values not loaded"));
   }
   else
   {
-    DEBUG_PRINTLN("Values Loaded");
+    DEBUG_PRINTLN(F("Values Loaded"));
   }
 
   delay(500);
@@ -84,7 +85,7 @@ void setup()
     RSTATE.isPortalActive = true;
     if (!APConnection(AP_MODE_SSID))
     {
-      DEBUG_PRINTLN("Error Setting Up AP Connection");
+      DEBUG_PRINTLN(F("Error Setting Up AP Connection"));
       return;
     }
     delay(100);
@@ -130,13 +131,13 @@ void loop()
   {
     if (!isDesiredWiFiAvailable(PSTATE.apSSID) && !RSTATE.isSwitchToGSMRequired)
     {
-      DEBUG_PRINTLN("WiFi not available Switch to GSM");
+      DEBUG_PRINTLN(F("WiFi not available Switch to GSM"));
       RSTATE.isSwitchToGSMRequired = true;
     }
 
     if (!RSTATE.isSwitchToGSMRequired && !reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
     {
-      DEBUG_PRINTLN("Error Connecting to WiFi, or switched to GSM");
+      DEBUG_PRINTLN(F("Error Connecting to WiFi, or switched to GSM"));
     }
   }
 
@@ -150,7 +151,7 @@ void loop()
   {
     if (!isSHTAvailable())
     {
-      DEBUG_PRINTLN("SHT Not connected, initialising again");
+      DEBUG_PRINTLN(F("SHT Not connected, initialising again"));
       shtInit();
     }
     else
@@ -160,7 +161,7 @@ void loop()
     }
     if (!isLightAvailable)
     {
-      DEBUG_PRINTLN("BH1750 Not connected, initialising again");
+      DEBUG_PRINTLN(F("BH1750 Not connected, initialising again"));
       lightInit();
     }
     else
@@ -189,7 +190,7 @@ void loop()
   {
     if (RSTATE.isSwitchToGSMRequired)
     {
-      DEBUG_PRINTLN("Post to cloud  ");
+      DEBUG_PRINTLN(F("Post to cloud  "));
       sensorCheckTimer.detach();
       String payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
       mqtt.publish(topic_publish,payload.c_str());
@@ -197,7 +198,6 @@ void loop()
       blinkSignalLed(HIGH);
     }
     RSTATE.isPayloadPostTimeout = false;
-    DEBUG_PRINTLN(RSTATE.deviceEvents);
     deviceState.store();
     sensorCheckTimer.attach(1, oneSecCallback);
   }
@@ -231,7 +231,7 @@ void mqtt_subscribe_task()
   static int gsm_retries = 0;
   if(!modem.isNetworkConnected()){
       RSTATE.isNetworkActive = false;
-      DEBUG_PRINTLN("Network not available");
+      DEBUG_PRINTLN(F("Network not available"));
       modem.waitForNetwork();
       gsm_retries++;
       if(gsm_retries >= RSTATE.gsmConnectionRetries){
@@ -240,19 +240,19 @@ void mqtt_subscribe_task()
 
   }
   if(!modem.isGprsConnected()){
-      DEBUG_PRINTLN("GPRS not connected");
-      modem.gprsConnect("airtelgprs.com");
+      DEBUG_PRINTLN(F("GPRS not connected"));
+      modem.gprsConnect("airteliot.com");
   }
 
   if(modem.isGprsConnected()){
   if (!mqtt.connected())
   {
-    Serial.print("Attempting MQTT connection...");
+    DEBUG_PRINT(F("Attempting MQTT connection..."));
     // Attempt to connect
-    if (mqtt.connect("TTCR010124"))
+    if (mqtt.connect(StringUUIDGen().c_str()))
     {
       RSTATE.isMQTTConnected = true;
-      Serial.println("connected");
+      DEBUG_PRINT(F("connected"));
       String mqtt_sub_topic = cloudTalkGsm.createSubscribeTopic(false);
       DEBUG_PRINTF("subscribing to topic: %s\n",mqtt_sub_topic.c_str()); 
       mqtt.subscribe(mqtt_sub_topic.c_str());
@@ -278,7 +278,7 @@ void mqtt_check_connection(bool isGSMRequired)
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
   sensorCheckTimer.detach();
-  DEBUG_PRINT("Action received");
+  DEBUG_PRINT(F("Action received"));
   //clearDisplay();
   cloudTalkGsm.handleSubscribe((char*)payload);
   String mqtt_ack_topic = cloudTalkGsm.createSubscribeTopic(true);

@@ -9,3 +9,5 @@ f69482de7b60e228bf15baf90752e7e89817a709d625067340a1f1fba7762871-public.pem.key
 f69482de7b60e228bf15baf90752e7e89817a709d625067340a1f1fba7762871-certificate.pem.crt\
 AmazonRootCA1.pem  
 src/certs.h
+src/.theia
+src/build

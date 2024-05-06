@@ -2,6 +2,7 @@
 #define SENSOR_READ_H
 
 #include "Adafruit_SHT4x.h"
+//#include "Adafruit_SHT31.h"
 #include "deviceState.h"
 #include "utils.h"
 #include "BH1750.h"
