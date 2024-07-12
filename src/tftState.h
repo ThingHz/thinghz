@@ -1789,7 +1789,7 @@ const unsigned short VedioCover2_1[27840] PROGMEM = {
 
 void initDisplay() {
   tft.begin();         // Initialize TFT display
-  tft.setRotation(1);  // Set screen orientation to horizontal
+  tft.setRotation(3);  // Set screen orientation to horizontal
   // Splash screen
   tft.fillScreen(TFT_WHITE);  // Set background color to white
 }

@@ -83,7 +83,7 @@ String formApSsidName(String deviceId) {
 #define HW_REV                          1 
 
 // firmware rev
-#define FW_REV                          1
+#define FW_REV                          2
 
 //missied Data point spiff file
 #define MISS_POINT_STORE_FILE_NAME      "/missDataPoint.txt"

@@ -128,7 +128,7 @@ class ESPCaptivePortal
             PSTATE.humidCalibration = (request->getParam("humidcal")->value()).toInt();
             DEBUG_PRINTF("humid calibration stored %d\t\n", PSTATE.humidCalibration);
           }
-          if (request->hasParam("")) {
+          if (request->hasParam("lightcal")) {
             PSTATE.lightCalibration = (request->getParam("lightcal")->value()).toInt();
             DEBUG_PRINTF("light calibration stored %d\t\n", PSTATE.lightCalibration);
           }
