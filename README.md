@@ -47,5 +47,5 @@ Arduino
 Know more about ThingHz IoT backend in this [github repository](https://github.com/ThingHz/ThinghzAndroid)
 
 ### ThingHz IoT Backend
-Know more about ThingHz IoT backend in this [github repository](https://github.com/vbshightime/thinghzIoTBackend)
+Know more about ThingHz IoT backend in this [github repository](https://github.com/ThingHz/thinghzIoTBackend)
 

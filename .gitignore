@@ -11,3 +11,4 @@ AmazonRootCA1.pem
 src/certs.h
 src/.theia
 src/build
+certs
