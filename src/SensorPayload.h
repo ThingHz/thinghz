@@ -1,94 +1,58 @@
-#ifndef SENSOR_H
-#define SENSOR_H
+#ifndef SENSOR_PAYLOAD_H
+#define SENSOR_PAYLOAD_H
 
 #include "hardwareDefs.h"
 #include "assert.h"
 #include "deviceState.h"
 
-
 enum SensorProfile {
-  SensorNone = 1,
-  SensorTemp,
-  SensorTH,
-  SensorGas,
-  SensorLight
+    SensorNone = 1,
+    SensorTemp,
+    SensorTH,
+    SensorGas,
+    SensorLight
 };
 
-
-
-const char* sensorProfileToString(uint8_t sProfile) {
-  //Here After and before const means that you can not change pointer as well as data
-  static const char* const map[] = {
-    "SensorNone", "SensorTemp", "SensorTH", "SensorGas", "SensorLight"
-  };
-  return map[sProfile];
-}
+const char* sensorProfileToString(uint8_t sProfile);
 
 struct SensorPayload {
 public:
-  SensorPayload()
-    : sensorProfile(SensorProfile::SensorNone), hwRev(HW_REV), fwRev(FW_REV), batteryPercentage(BATTERY_INITIAL_READING) {
-  }
-
-  uint8_t sensorProfile;
-  uint8_t hwRev;
-  uint8_t fwRev;
-  uint8_t batteryPercentage;
+    SensorPayload();
+    uint8_t sensorProfile;
+    uint8_t hwRev;
+    uint8_t fwRev;
+    uint8_t batteryPercentage;
 } __attribute__((packed));
 
-//Inherit properties of Sensor payload in other Sensor structure accoarding to Sensor Profile
-
 struct SensorPayloadT : public SensorPayload {
-  SensorPayloadT()
-    : temp(INVALID_TEMP_READING) {
-    sensorProfile = SensorProfile::SensorTemp;
-  }
-
-  float temp;
+    SensorPayloadT();
+    float temp;
 } __attribute__((packed));
 
 struct SensorPayloadTH : public SensorPayloadT {
-  SensorPayloadTH()
-    : humidity(INVALID_HUMIDITY_READING) {
-    sensorProfile = SensorProfile::SensorTH;
-  }
-
-  float humidity;
+    SensorPayloadTH();
+    float humidity;
 } __attribute__((packed));
 
-
 struct SensorPayloadGas : public SensorPayloadTH {
-  SensorPayloadGas()
-    : gas(INVALID_GAS_READING) {
-    sensorProfile = SensorProfile::SensorGas;
-  }
-
-  uint16_t gas;
+    SensorPayloadGas();
+    uint16_t gas;
 } __attribute__((packed));
 
 struct SensorPayloadLight : public SensorPayloadTH {
-  SensorPayloadLight()
-    : lux(INVALID_GAS_READING),
-      lightState1(DEFAULT_STATE_READING),
-      lightState2(DEFAULT_STATE_READING),
-      lightState3(DEFAULT_STATE_READING),
-      lightState4(DEFAULT_STATE_READING) {
-    sensorProfile = SensorProfile::SensorLight;
-  }
-
-  float lux;
-  uint8_t lightState1;
-  uint8_t lightState2;
-  uint8_t lightState3;
-  uint8_t lightState4;
+    SensorPayloadLight();
+    float lux;
+    uint8_t lightState1;
+    uint8_t lightState2;
+    uint8_t lightState3;
+    uint8_t lightState4;
 } __attribute__((packed));
 
-
-SensorPayload sensorPayload;
-SensorPayloadT sensorPayloadT;
-SensorPayloadTH sensorPayloadTH;
-SensorPayloadGas sensorPayloadGas;
-SensorPayloadLight sensorPayloadLight;
+extern SensorPayload sensorPayload;
+extern SensorPayloadT sensorPayloadT;
+extern SensorPayloadTH sensorPayloadTH;
+extern SensorPayloadGas sensorPayloadGas;
+extern SensorPayloadLight sensorPayloadLight;
 
 #define PAYLOAD_NONE sensorPayload
 #define PAYLOAD_T sensorPayloadT
@@ -96,4 +60,4 @@ SensorPayloadLight sensorPayloadLight;
 #define PAYLOAD_GAS sensorPayloadGas
 #define PAYLOAD_LIGHT sensorPayloadLight
 
-#endif
+#endif // SENSOR_PAYLOAD_H
