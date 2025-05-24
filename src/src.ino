@@ -7,7 +7,6 @@
 #define TINY_GSM_MODEM_SIM7600
 #define TINY_GSM_RX_BUFFER 1024
 #include <TinyGsmClient.h>
-#include "sensorRead.h"
 #include "utils.h"
 #include "WiFiOTA.h"
 #include <Ticker.h>
@@ -17,13 +16,12 @@
 #include "PubSubClient.h"
 #include "certs.h"
 #include "uuid.h"
-
+#include "main_src.h"
 
 Ticker sensorCheckTimer;
 DeviceState state;
 DeviceState &deviceState = state;
 ESPCaptivePortal captivePortal(deviceState);
-
 
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
@@ -38,8 +36,6 @@ TinyGsmClient gsmClient(modem);
 SSLClient secureClient(&gsmClient);
 PubSubClient mqtt(secureClient);
 #endif
-
-
 
 CloudTalkGSM cloudTalkGsm;
 
@@ -77,9 +73,9 @@ void setup()
   drawDisplay(RSTATE.displayEvents);
   delay(2000);
 #endif
-  
+
   DEBUG_PRINTF("The reset reason is %d\n", (int)rtc_get_reset_reason(0));
-  
+
   if (((int)rtc_get_reset_reason(0) == 12) || ((int)rtc_get_reset_reason(0) == 1))
   { // =  SW_CPU_RESET
     RSTATE.isPortalActive = true;
@@ -92,52 +88,29 @@ void setup()
     captivePortal.servePortal(true);
     captivePortal.beginServer();
     delay(100);
-
-/*#ifdef OLED_DISPLAY
-    clearDisplay();
-    RSTATE.displayEvents = DisplayPortalConfig;
-    drawDisplay(RSTATE.displayEvents);
-#endif*/
   }
+  setHardwarePinsAndDirection();
+  setCerts(&secureClient);
 
-  pinMode(SIG_PIN, OUTPUT);
-  pinMode(MODEM_PWKEY, OUTPUT);
-  pinMode(RELAY_PIN_1, OUTPUT);
-  pinMode(RELAY_PIN_2, OUTPUT);
-  pinMode(RELAY_PIN_3, OUTPUT);
-  pinMode(RELAY_PIN_4, OUTPUT);
-  digitalWrite(RELAY_PIN_1,PSTATE.light_state_1);
-  digitalWrite(RELAY_PIN_2,PSTATE.light_state_2);
-  digitalWrite(RELAY_PIN_3,PSTATE.light_state_3);
-  digitalWrite(RELAY_PIN_4,PSTATE.light_state_4);
-  modemPowerKeyToggle();
-  secureClient.setCACert(cacert);
-  secureClient.setCertificate(clientcert);
-  secureClient.setPrivateKey(clientkey);
-  secureClient.setTimeout(3000);
-  
   mqtt.setServer(MQTT_HOST_USING_PUBSUB, 8883);
   mqtt.setCallback(mqttCallback);
-  
-  cloudTalkGsm.restartModem(&modem);
-  cloudTalkGsm.initialiseModem(&modem);
-  
+
+  if (PSTATE.isWiFiOrGSM == 2)
+  {
+    cloudTalkGsm.restartModem(&modem);
+    cloudTalkGsm.initialiseModem(&modem);
+  }
+
   sensorCheckTimer.attach(1, oneSecCallback);
 }
 
 void loop()
 {
-  if (!RSTATE.isPortalActive)
+  if (!RSTATE.isPortalActive && PSTATE.isWiFiOrGSM == 1)
   {
-    if (!isDesiredWiFiAvailable(PSTATE.apSSID) && !RSTATE.isSwitchToGSMRequired)
+    if (!reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
     {
-      DEBUG_PRINTLN(F("WiFi not available Switch to GSM"));
-      RSTATE.isSwitchToGSMRequired = true;
-    }
-
-    if (!RSTATE.isSwitchToGSMRequired && !reconnectWiFi((PSTATE.apSSID).c_str(), (PSTATE.apPass).c_str(), 300))
-    {
-      DEBUG_PRINTLN(F("Error Connecting to WiFi, or switched to GSM"));
+      DEBUG_PRINTLN(F("Error Connecting to WiFi"));
     }
   }
 
@@ -149,26 +122,7 @@ void loop()
 
   if (RSTATE.isReadSensorTimeout)
   {
-    if (!isSHTAvailable())
-    {
-      DEBUG_PRINTLN(F("SHT Not connected, initialising again"));
-      shtInit();
-    }
-    else
-    {
-      readSHT();
-      DEBUG_PRINTF("Temperature Value: %1f, Humidity Value: %1f\n", RSTATE.temperature, RSTATE.humidity);
-    }
-    if (!isLightAvailable)
-    {
-      DEBUG_PRINTLN(F("BH1750 Not connected, initialising again"));
-      lightInit();
-    }
-    else
-    {
-      readLight();
-      DEBUG_PRINTF("Lux Value: %.1f\n", RSTATE.lux);
-    }
+    readSensors();
 
 #ifdef OLED_DISPLAY
     clearDisplay();
@@ -178,28 +132,42 @@ void loop()
     RSTATE.isReadSensorTimeout = false;
   }
 
-  if (RSTATE.isMqttConnectionTimeout)
+  if (RSTATE.isMqttConnectionTimeout && isNetworkConnected(&modem))
   {
     RSTATE.isNetworkActive = true;
     RSTATE.isMqttConnectionTimeout = true;
-    mqtt_check_connection(RSTATE.isSwitchToGSMRequired);
+    if (!mqtt.connected())
+    {
+      mqtt_subscribe_task();
+    }
+    blinkSignalLed(LOW);
     RSTATE.isMqttConnectionTimeout = false;
   }
 
   if (RSTATE.isPayloadPostTimeout)
   {
-    if (RSTATE.isSwitchToGSMRequired)
+    DEBUG_PRINTLN(F("Post to cloud  "));
+    String payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
+    sensorCheckTimer.detach();
+    switch (PSTATE.isWiFiOrGSM)
     {
-      DEBUG_PRINTLN(F("Post to cloud  "));
-      sensorCheckTimer.detach();
-      String payload = cloudTalkGsm.createPayload(DEVICE_SENSOR_TYPE);
-      mqtt.publish(topic_publish,payload.c_str());
+    case 1:
+      sendPayloadUsingWifi();
+      break;
+    case 2:
       cloudTalkGsm.updateNTPTime(&modem);
-      blinkSignalLed(HIGH);
+      mqtt.publish(topic_publish, payload.c_str());
+      break;
+    case3:
+      mqtt.publish(topic_publish, payload.c_str());
+      break;
+    default:
+      break;
     }
-    RSTATE.isPayloadPostTimeout = false;
     deviceState.store();
     sensorCheckTimer.attach(1, oneSecCallback);
+    blinkSignalLed(HIGH);
+    RSTATE.isPayloadPostTimeout = false;
   }
   mqtt_subscribe_task();
   mqtt.loop();
@@ -227,68 +195,61 @@ void oneSecCallback()
 }
 
 void mqtt_subscribe_task()
-{  
+{
   static int gsm_retries = 0;
-  if(!modem.isNetworkConnected()){
+  if (PSTATE.isWiFiOrGSM == 2)
+  {
+    if (!modem.isNetworkConnected())
+    {
       RSTATE.isNetworkActive = false;
       DEBUG_PRINTLN(F("Network not available"));
       modem.waitForNetwork();
       gsm_retries++;
-      if(gsm_retries >= RSTATE.gsmConnectionRetries){
-          cloudTalkGsm.restartModem(&modem);
+      if (gsm_retries >= RSTATE.gsmConnectionRetries)
+      {
+        cloudTalkGsm.restartModem(&modem);
       }
-
-  }
-  if(!modem.isGprsConnected()){
-      DEBUG_PRINTLN(F("GPRS not connected"));
-      modem.gprsConnect("airteliot.com");
+    }
+    cloudTalkGsm.retryGPRSConnection(&modem);
   }
 
-  if(modem.isGprsConnected()){
-  if (!mqtt.connected())
+  if (isNetworkConnected(&modem))
   {
-    DEBUG_PRINT(F("Attempting MQTT connection..."));
-    // Attempt to connect
-    if (mqtt.connect(StringUUIDGen().c_str()))
+    if (!mqtt.connected())
     {
-      RSTATE.isMQTTConnected = true;
-      DEBUG_PRINT(F("connected"));
-      String mqtt_sub_topic = cloudTalkGsm.createSubscribeTopic(false);
-      DEBUG_PRINTF("subscribing to topic: %s\n",mqtt_sub_topic.c_str()); 
-      mqtt.subscribe(mqtt_sub_topic.c_str());
+      DEBUG_PRINT(F("Attempting MQTT connection..."));
+      // Attempt to connect
+      if (mqtt.connect(StringUUIDGen().c_str()))
+      {
+        RSTATE.isMQTTConnected = true;
+        DEBUG_PRINT(F("connected"));
+        String mqtt_sub_topic = cloudTalkGsm.createSubscribeTopic(false);
+        DEBUG_PRINTF("subscribing to topic: %s\n", mqtt_sub_topic.c_str());
+        mqtt.subscribe(mqtt_sub_topic.c_str());
+      }
+      else
+      {
+        RSTATE.isMQTTConnected = false;
+        DEBUG_PRINTF("failed, rc=%d\n", mqtt.state());
+      }
     }
-    else
-    {
-      RSTATE.isMQTTConnected = false;
-      DEBUG_PRINTF("failed, rc=%d\n",mqtt.state());
-    }
-  }
   }
 }
 
-void mqtt_check_connection(bool isGSMRequired)
-{ 
-  //getGSMDateAndTime(&modem);
-  if (!mqtt.connected())
-  {
-    mqtt_subscribe_task();
-  }
-  blinkSignalLed(LOW);
-}
-
-void mqttCallback(char* topic, byte* payload, unsigned int len) {
+void mqttCallback(char *topic, byte *payload, unsigned int len)
+{
   sensorCheckTimer.detach();
   DEBUG_PRINT(F("Action received"));
-  //clearDisplay();
-  cloudTalkGsm.handleSubscribe((char*)payload);
+  cloudTalkGsm.handleSubscribe((char *)payload);
   String mqtt_ack_topic = cloudTalkGsm.createSubscribeTopic(true);
-  if (!RSTATE.light_state_1 || !RSTATE.light_state_2  || !RSTATE.light_state_3 || !RSTATE.light_state_4){
-      mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"on\"}");
-  }else{
-      mqtt.publish(mqtt_ack_topic.c_str(),"{\"Success\": \"true\", \"Status\": \"off\"}");
-  } 
+  if (!RSTATE.light_state_1 || !RSTATE.light_state_2 || !RSTATE.light_state_3 || !RSTATE.light_state_4)
+  {
+    mqtt.publish(mqtt_ack_topic.c_str(), "{\"Success\": \"true\", \"Status\": \"on\"}");
+  }
+  else
+  {
+    mqtt.publish(mqtt_ack_topic.c_str(), "{\"Success\": \"true\", \"Status\": \"off\"}");
+  }
   sensorCheckTimer.attach(1, oneSecCallback);
   blinkSignalLed(HIGH);
 }
-
-

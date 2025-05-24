@@ -20,7 +20,6 @@ RunTimeState::RunTimeState() :
     light_state_3(DEFAULT_STATE_READING),
     light_state_4(DEFAULT_STATE_READING),
     light_thresh(DEFAULT_THRESH_READING),
-    isSwitchToGSMRequired(false),
     isReadSensorTimeout(false),
     isPayloadPostTimeout(false),
     isMqttConnectionTimeout(false),
@@ -34,10 +33,6 @@ RunTimeState::RunTimeState() :
 // Constructor for PersistantState
 PersistantState::PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
     apPass(WAN_WIFI_PASS_DEFAULT),
-    apn(DEVICE_ID_DEFAULT),
-    tempCalibration(CALIBRATION_LEVEL_TEMP),
-    humidCalibration(CALIBRATION_LEVEL_HUMID),
-    lightCalibration(CALIBRATION_LEVEL_CARBON),
     isOtaAvailable(0),
     newfWVersion(0),
     light_state_1(0),
@@ -51,10 +46,6 @@ PersistantState::PersistantState() : apSSID(WAN_WIFI_SSID_DEFAULT),
 bool PersistantState::operator==(const PersistantState& rhs) {
     return ((apSSID == rhs.apSSID) &&
             (apPass == rhs.apPass) &&
-            (apn == rhs.apn) &&
-            (tempCalibration == rhs.tempCalibration) &&
-            (humidCalibration == rhs.humidCalibration) &&
-            (lightCalibration == rhs.lightCalibration) &&
             (isOtaAvailable == rhs.isOtaAvailable) &&
             (newfWVersion == rhs.newfWVersion) &&
             (light_state_1 == rhs.light_state_1) &&
@@ -67,11 +58,6 @@ bool PersistantState::operator==(const PersistantState& rhs) {
 PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState &persistantState) {
     strcpy(version, EEPROM_STORAGE_FORMAT_VERSION);
     strcpy(apSSID, persistantState.apSSID.c_str());
-    strcpy(apPass, persistantState.apPass.c_str());
-    strcpy(apn, persistantState.apn.c_str());
-    tempCalibration = persistantState.tempCalibration;
-    humidCalibration = persistantState.humidCalibration;
-    lightCalibration = persistantState.lightCalibration;
     isOtaAvailable = persistantState.isOtaAvailable;
     newfWVersion = persistantState.newfWVersion;
     light_state_1 = persistantState.light_state_1;
@@ -83,11 +69,6 @@ PersistantStateStorageFormat::PersistantStateStorageFormat(const PersistantState
 // Constructor for PersistantState from storage format
 PersistantState::PersistantState(const PersistantStateStorageFormat& persistantStore) {
     apSSID = String(persistantStore.apSSID);
-    apPass = String(persistantStore.apPass);
-    apn = String(persistantStore.apn);
-    tempCalibration = persistantStore.tempCalibration;
-    humidCalibration = persistantStore.humidCalibration;
-    lightCalibration = persistantStore.lightCalibration;
     isOtaAvailable = persistantStore.isOtaAvailable;
     newfWVersion = persistantStore.newfWVersion;
     light_state_1 = persistantStore.light_state_1;

@@ -49,7 +49,6 @@ class PersistantStateStorageFormat;
 class RunTimeState {
 public:
     RunTimeState();
-
     uint deviceEvents;
     DisplayMode displayEvents;
     bool isNetworkConnected;
@@ -70,11 +69,13 @@ public:
     uint light_thresh; 
     bool isReadSensorTimeout;
     bool isPayloadPostTimeout;
-    bool isSwitchToGSMRequired;
     bool isMqttConnectionTimeout;
     bool isMQTTConnected;
     bool isNetworkActive;
     int gsmConnectionRetries;
+    bool isManualActive;
+    bool isGSMActive;
+    bool isWiFiActive;
     String gsm_time;
 };
 
@@ -91,16 +92,13 @@ public:
     // Public data members
     String apSSID;
     String apPass;
-    String apn;
-    int tempCalibration;
-    int humidCalibration;
-    int lightCalibration;
-    uint8_t isOtaAvailable;
-    uint8_t newfWVersion;
-    uint8_t light_state_1;
-    uint8_t light_state_2;
-    uint8_t light_state_3;
-    uint8_t light_state_4;
+    uint8_t isWiFiOrGSM:2;
+    uint8_t isOtaAvailable:1;
+    uint8_t newfWVersion:1;
+    uint8_t light_state_1:1;
+    uint8_t light_state_2:1;
+    uint8_t light_state_3:1;
+    uint8_t light_state_4:1;
 };
 
 /**
@@ -113,13 +111,9 @@ public:
     PersistantStateStorageFormat(const PersistantState &persistantState);
     char version[8];
     char apSSID[30];
-    char apn[30];
-    char apPass[30];
-    int tempCalibration;
-    int humidCalibration;
-    int lightCalibration;
-    uint8_t isOtaAvailable;
-    uint8_t newfWVersion;
+    uint8_t isWiFiOrGSM:2;
+    uint8_t isOtaAvailable:1;
+    uint8_t newfWVersion:1;
     uint8_t light_state_1;
     uint8_t light_state_2;
     uint8_t light_state_3;

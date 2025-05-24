@@ -115,6 +115,9 @@ bool readLight(){
   if (lightMeter.measurementReady())
   { 
     float luxValues = lightMeter.readLightLevel();
+    if(luxValues < 0.0){
+      return false;
+    }
     RSTATE.lux = luxValues + PSTATE.lightCalibration;
     return true;
   }

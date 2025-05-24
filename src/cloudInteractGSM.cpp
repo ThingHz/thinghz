@@ -2,6 +2,7 @@
 
 // Function implementations
 
+
 bool CloudTalkGSM::setMQTTTopic(TinyGsm *modem)
 {
     modem->sendAT(GF("+CMQTTTOPIC=0,21"));
@@ -181,72 +182,9 @@ bool CloudTalkGSM::updateNTPTime(TinyGsm *modem)
 
 String CloudTalkGSM::createPayload(uint8_t sProfile)
 {
-    char messageCreatePayload[JSON_MSG_MAX_LEN];
-    currentLightState();
-    switch (sProfile)
-    {
-    case SensorProfile::SensorNone:
-        DEBUG_PRINTLN("NO Sensor Found");
-        break;
-    case SensorProfile::SensorTemp:
-        PAYLOAD_T.temp = RSTATE.temperature;
-        DEBUG_PRINTLN("Creating payload for Temp Sensor");
-        snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}",
-                 (macAddrWithoutColons()).c_str(),
-                 PAYLOAD_T.temp,
-                 PAYLOAD_T.sensorProfile,
-                 RSTATE.batteryPercentage);
-        DEBUG_PRINTLN(messageCreatePayload);
-        break;
-    case SensorProfile::SensorTH:
-        PAYLOAD_TH.temp = RSTATE.temperature;
-        PAYLOAD_TH.humidity = RSTATE.humidity;
-        DEBUG_PRINTLN("Creating payload for Temp Humid Sensor");
-        snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"temp\": \"%.1f\",\"humid\": \"%.1f\",\"sensor_profile\": %d,\"battery\": \"%d\"}",
-                 (macAddrWithoutColons()).c_str(),
-                 PAYLOAD_TH.temp,
-                 PAYLOAD_TH.humidity,
-                 PAYLOAD_TH.sensorProfile,
-                 RSTATE.batteryPercentage);
-        break;
-    case SensorProfile::SensorGas:
-        DEBUG_PRINTLN("Creating payload for Gas Sensor");
-        PAYLOAD_GAS.gas = RSTATE.carbon;
-        PAYLOAD_GAS.temp = RSTATE.temperature;
-        PAYLOAD_GAS.humidity = RSTATE.humidity;
-        snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"gas\":\"%u\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d}",
-                 (macAddrWithoutColons()).c_str(),
-                 PAYLOAD_GAS.gas,
-                 PAYLOAD_GAS.temp,
-                 PAYLOAD_GAS.humidity,
-                 RSTATE.batteryPercentage,
-                 PAYLOAD_GAS.sensorProfile);
-        break;
-    case SensorProfile::SensorLight:
-        DEBUG_PRINTLN("Creating payload for Light Control and Analysis");
-        PAYLOAD_LIGHT.temp = RSTATE.temperature;
-        PAYLOAD_LIGHT.humidity = RSTATE.humidity;
-        PAYLOAD_LIGHT.lightState1 = !RSTATE.light_state_1;
-        PAYLOAD_LIGHT.lightState2 = !RSTATE.light_state_2;
-        PAYLOAD_LIGHT.lightState3 = !RSTATE.light_state_3;
-        PAYLOAD_LIGHT.lightState4 = !RSTATE.light_state_4;
-        PAYLOAD_LIGHT.lux = RSTATE.lux;
-        snprintf(messageCreatePayload, JSON_MSG_MAX_LEN, "{\"device_id\":\"%s\",\"lux\":\"%.1f\",\"temp\":\"%.1f\",\"humid\":\"%.1f\",\"battery\":\"%d\",\"sensor_profile\":%d,\"light_state_1\":%u,\"light_state_2\":%u,\"light_state_3\":%u,\"light_state_4\":%u}",
-                 (macAddrWithoutColons()).c_str(),
-                 PAYLOAD_LIGHT.lux,
-                 PAYLOAD_LIGHT.temp,
-                 PAYLOAD_LIGHT.humidity,
-                 RSTATE.batteryPercentage,
-                 PAYLOAD_LIGHT.sensorProfile,
-                 PAYLOAD_LIGHT.lightState1,
-                 PAYLOAD_LIGHT.lightState2,
-                 PAYLOAD_LIGHT.lightState3,
-                 PAYLOAD_LIGHT.lightState4);
-        break;
-    default:
-        DEBUG_PRINTLN("Not a valid Sensor");
-        break;
-    }
+    char* messageCreatePayload = nullptr;
+    T_SensorPayload* sensorPayload = nullptr;
+    messageCreatePayload = (*fp_CreatePayload[sProfile])(&sensorPayload, messageCreatePayload, JSON_MSG_MAX_LEN);
     return String(messageCreatePayload);
 }
 
@@ -264,6 +202,13 @@ bool CloudTalkGSM::restartModem(TinyGsm *modem)
         clearBit(RSTATE.deviceEvents, DeviceStateEvent::DSE_SimStatusZero);
     }
     return ret;
+}
+
+void CloudTalkGSM::retryGPRSConnection(TinyGsm *modem){
+     if(!modem->isGprsConnected()){
+      DEBUG_PRINTLN(F("GPRS not connected"));
+      modem->gprsConnect("airteliot.com");
+  }
 }
 
 bool CloudTalkGSM::initialiseModem(TinyGsm *modem)

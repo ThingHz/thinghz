@@ -4,6 +4,7 @@
 #include <SPIFFS.h>
 #include "deviceState.h"
 #include <WiFi.h>
+#include "Update.h"
 
 
 const IPAddress apIP(192, 168, 4, 1);

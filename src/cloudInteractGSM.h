@@ -15,6 +15,7 @@
 #define TINY_GSM_RX_BUFFER 1024
 
 #include <TinyGsmClient.h>
+#include "HTTPClient.h"
 
 const char topic_publish[] = "aws/thing/thinghz/";
 const char topic_subscribe[] = "aws/thing/thinghz/light";
@@ -23,6 +24,7 @@ const int port = 8883;
 class CloudTalkGSM
 {
 public:
+    CloudTalkGSM();
     bool setMQTTTopic(TinyGsm *modem);
     bool createMQTTPayload(TinyGsm *modem);
     bool publishToTopic(TinyGsm *modem);
@@ -41,6 +43,8 @@ public:
     bool initialiseModem(TinyGsm *modem);
     bool handleSubscribe(char *subscribeString);
     String createSubscribeTopic(bool ack);
+    void retryGPRSConnection(TinyGsm* modem);
+
 };
 
 #endif // CLOUDTALKGSM_H
